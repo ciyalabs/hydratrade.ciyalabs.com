@@ -163,10 +163,9 @@ a {
 }
 
 .footer-mark {
-    display: block;
-    width: 40px;
-    height: 40px;
-    margin-bottom: 1.2rem;
+    flex: none;
+    width: 0.8em;
+    height: 0.8em;
 }
 
 .nav-right {
@@ -675,7 +674,11 @@ a {
 }
 
 .footer-brand-title {
-    font: 400 clamp(2rem, 4vw, 3rem)/1.1 var(--serif);
+    display: flex;
+    align-items: center;
+    gap: 0.35em;
+    white-space: nowrap;
+    font: 400 clamp(1.9rem, 2.8vw, 2.6rem)/1.1 var(--serif);
     letter-spacing: -0.02em;
     margin-bottom: 1.4rem;
 }
