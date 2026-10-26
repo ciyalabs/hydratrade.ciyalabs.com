@@ -1,0 +1,1426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HydraTrade V. Paid to Wait</title>
+<meta name="description" content="The funding rate of the same perpetual contract differs between exchanges. This report measures the difference across three large exchanges, finds it wide only where nobody trades, and finds the older carry trade that survives.">
+<link rel="stylesheet" href="../fonts/v.css">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f4f1ea; --bg-2:#ebe6db; --bg-3:#e0d9ca;
+  --ink:#16181d; --ink-2:#474a52; --ink-3:#80828a; --rule:#d6cfc0;
+  --navy:#2f5bb0; --brass:#b06d0c; --teal:#0e8a72; --red:#c0432a;
+  --brass-soft:#f0e1c6; --navy-soft:#dde4f3;
+  --display:"Bodoni Moda",Didot,Georgia,serif;
+  --serif:"Spectral",Georgia,serif;
+  --sans:"Manrope",ui-sans-serif,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#111419; --bg-2:#191d24; --bg-3:#222731;
+    --ink:#e8e6e0; --ink-2:#b3b3ae; --ink-3:#7b7d82; --rule:#2c313b;
+    --navy:#5f86d6; --brass:#bb8226; --teal:#2ea58a; --red:#d8664c;
+    --brass-soft:#3a2b13; --navy-soft:#1c2740;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#111419; --bg-2:#191d24; --bg-3:#222731;
+  --ink:#e8e6e0; --ink-2:#b3b3ae; --ink-3:#7b7d82; --rule:#2c313b;
+  --navy:#5f86d6; --brass:#bb8226; --teal:#2ea58a; --red:#d8664c;
+  --brass-soft:#3a2b13; --navy-soft:#1c2740;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--bg); color:var(--ink); font:400 18.5px/1.66 var(--serif)}
+.wrap{max-width:740px; margin:0 auto; padding:0 16px 120px}
+
+/* masthead */
+header.mast{padding:58px 0 18px; text-align:center}
+.kicker{font:600 11px/1 var(--sans); letter-spacing:.24em; text-transform:uppercase; color:var(--brass);
+  margin-bottom:24px}
+h1{font:400 clamp(38px,7vw,66px)/1.02 var(--display); font-variation-settings:"opsz" 96;
+  margin:0 0 18px; letter-spacing:-.01em}
+h1 em{font-style:italic; color:var(--brass)}
+.sub{font:400 italic clamp(18px,2.4vw,21px)/1.45 var(--serif); color:var(--ink-2); max-width:36ch;
+  margin:0 auto 24px}
+.byline{font:500 12.5px/1.5 var(--sans); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3);
+  display:flex; justify-content:center; flex-wrap:wrap; gap:4px 28px}
+
+/* hero and the tide strip */
+figure.hero{margin:34px -16px 0}
+figure.hero img{display:block; width:100%; height:auto; border-top:1px solid var(--rule);
+  border-bottom:1px solid var(--rule); background:var(--bg-2)}
+figure.hero.noimg,figure.divider.noimg{display:none}
+figure.divider{margin:80px -16px 0}
+figure.divider img{display:block; width:100%; height:auto; border-top:1px solid var(--rule);
+  border-bottom:1px solid var(--rule)}
+figure.divider figcaption{border:0; padding:0; margin:8px 16px 0; text-align:right; font-size:12px; color:var(--ink-3)}
+@media (min-width:800px){ figure.divider{margin-left:-80px; margin-right:-80px} }
+figure.hero figcaption{border:0; padding:0; margin:8px 16px 0; text-align:right; font-size:12px; color:var(--ink-3)}
+figure.tide-fig{margin:30px 0 40px}
+figure.tide-fig figcaption{border:0; padding:0; text-align:center; font-size:13px; color:var(--ink-3)}
+.fig.tide .tide-line{stroke:var(--ink-3); stroke-width:.8}
+.fig.tide .tide-up{stroke:var(--brass); stroke-width:1.4}
+.fig.tide .tide-dn{stroke:var(--red); stroke-width:1.4}
+@media (min-width:800px){ figure.hero{margin-left:-80px; margin-right:-80px} }
+
+.stand{font:400 20.5px/1.6 var(--serif); margin:0 0 16px}
+.stand .big{font:500 22.5px/1.5 var(--serif)}
+
+/* the tide table of results */
+.tides{margin:44px 0 52px; border-top:2px solid var(--ink); border-bottom:2px solid var(--ink)}
+.tides .th{display:flex; justify-content:space-between; font:700 10.5px/1 var(--sans); letter-spacing:.2em;
+  text-transform:uppercase; color:var(--ink-3); padding:10px 0; border-bottom:1px solid var(--rule)}
+.tides .row{display:grid; grid-template-columns:1.1fr 1.7fr auto; gap:6px 18px; padding:13px 0;
+  border-bottom:1px solid var(--rule); align-items:baseline}
+.tides .row:last-child{border-bottom:0}
+.tides .q{font:600 14.5px/1.4 var(--sans)}
+.tides .a{font:400 15.5px/1.5 var(--serif); color:var(--ink-2)}
+.chip{font:700 10px/1 var(--sans); letter-spacing:.14em; text-transform:uppercase; padding:5px 8px;
+  border-radius:2px; white-space:nowrap}
+.chip.hi{color:var(--brass); background:var(--brass-soft)}
+.chip.lo{color:var(--red); background:color-mix(in srgb,var(--red) 13%,transparent)}
+.chip.ok{color:var(--teal); background:color-mix(in srgb,var(--teal) 14%,transparent)}
+.chip.mid{color:var(--navy); background:var(--navy-soft)}
+@media (max-width:620px){ .tides .row{grid-template-columns:1fr auto} .tides .a{grid-column:1/-1} .tides .chip{justify-self:start} }
+
+/* parts */
+.part{margin:84px 0 0}
+.part > .num{font:400 italic 15px/1 var(--display); color:var(--brass); display:block; margin-bottom:10px;
+  letter-spacing:.04em}
+h2{font:500 clamp(27px,3.6vw,35px)/1.16 var(--serif); margin:0 0 22px; letter-spacing:-.01em}
+h3{font:700 15.5px/1.4 var(--sans); margin:36px 0 10px; letter-spacing:.01em}
+p{margin:0 0 17px}
+.lede{font:400 20px/1.58 var(--serif); color:var(--ink-2)}
+sup{font:700 .62em/0 var(--sans)}
+.pull{margin:42px 0; text-align:center; font:400 italic 25px/1.4 var(--serif); color:var(--ink);
+  padding:20px 0; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule)}
+.note-box{margin:32px 0; padding:18px 20px; background:var(--bg-2); border-left:3px solid var(--brass);
+  font:400 16.5px/1.56 var(--serif)}
+.note-box .h{font:700 11px/1 var(--sans); letter-spacing:.16em; text-transform:uppercase; color:var(--brass);
+  display:block; margin-bottom:10px}
+.note-box p{margin:0 0 12px} .note-box p:last-child{margin:0}
+
+/* figures */
+figure{margin:40px 0}
+svg.fig{width:100%; height:auto; display:block; font-family:var(--sans)}
+figcaption{font:400 14px/1.56 var(--sans); color:var(--ink-2); margin-top:14px; padding-left:14px;
+  border-left:2px solid var(--brass)}
+figcaption b{color:var(--ink); font-weight:700}
+.fig .grid{stroke:var(--rule); stroke-width:1}
+.fig .axis{stroke:var(--ink-3); stroke-width:1.2}
+.fig .tick{font-size:11.5px; fill:var(--ink-3)}
+.fig .axlab{font-size:12px; font-weight:600; fill:var(--ink-2)}
+.fig .lab{font-size:12.5px; fill:var(--ink-2)}
+.fig .lab-strong{font-size:12.5px; font-weight:700; fill:var(--ink)}
+.fig .note{font-size:12px; fill:var(--ink-3)}
+.fig .pt{font-size:12.5px; font-weight:700; fill:var(--ink)}
+.fig .colhead{font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; fill:var(--ink-3)}
+.fig .share{font-size:19px; font-weight:700; fill:var(--ink); letter-spacing:-.01em}
+.fig .bracket{fill:none; stroke:var(--ink-3); stroke-width:1}
+.fig .div{stroke:var(--rule); stroke-width:1; stroke-dasharray:2 3}
+/* diagrams */
+.fig .dg-box{fill:var(--bg-2); stroke:var(--rule); stroke-width:1.2}
+.fig .dg-net{fill:var(--brass-soft); stroke:var(--brass); stroke-width:1.4}
+.fig .dg-h{font-size:14px; font-weight:700; fill:var(--ink)}
+.fig .dg-t{font-size:12.5px; fill:var(--ink-2)}
+.fig .dg-c{fill:var(--ink-3)}
+.fig .dg-leg{font-size:11px; font-weight:700; letter-spacing:.1em}
+.fig .dg-short{fill:var(--red)} .fig .dg-long{fill:var(--teal)}
+.fig .dg-flow{fill:none; stroke:var(--ink-3); stroke-width:1.6}
+.fig .dg-in{stroke:var(--teal)} .fig .dg-out{stroke:var(--red)}
+.fig .dg-head{fill:var(--ink-3)}
+.fig .dg-cross{stroke:var(--ink-3); stroke-width:1; stroke-dasharray:4 4}
+.fig .dg-note{font-size:12px; font-style:italic; fill:var(--ink-3)}
+.fig .dg-big{font:700 34px var(--sans); fill:var(--ink); letter-spacing:-.02em}
+.fig .dg-short-band{fill:var(--red)} .fig .dg-long-band{fill:var(--teal)}
+.fig .dg-pill{fill:var(--bg); stroke:var(--rule); stroke-width:1.2}
+.fig .wf-pos{fill:var(--teal)} .fig .wf-neg{fill:var(--red); opacity:.85} .fig .wf-net{fill:var(--brass)}
+.fig .wf-tick{stroke:var(--ink-3); stroke-width:2}
+.fig .wf-link{stroke:var(--ink-3); stroke-width:1; stroke-dasharray:2 3}
+/* charts */
+.fig .band{fill:var(--ink); opacity:.035}
+.fig .cut{stroke:var(--ink-3); stroke-width:1.2; stroke-dasharray:4 3}
+.fig .dot-earn{fill:var(--brass); fill-opacity:.42; stroke:var(--brass); stroke-width:1}
+.fig .dot-lost{fill:none; stroke:var(--red); stroke-width:1.3}
+.fig .name{font-size:11px; font-weight:700; fill:var(--ink-2); paint-order:stroke; stroke:var(--bg); stroke-width:3}
+.fig .dot-idle{fill:var(--ink-3); fill-opacity:.6}
+.fig circle:hover{stroke:var(--ink); stroke-width:1.6}
+.fig .seg-kept{fill:var(--brass)} .fig .seg-rest{fill:var(--ink-3)} .fig .seg-carry{fill:var(--teal)} .fig .seg-loss{fill:var(--red); opacity:.6} .fig .seg-cost{fill:var(--red)}
+.fig .net-line{stroke:var(--ink); stroke-width:2}
+.fig .seg-in{font-size:11px; font-weight:700; fill:#fff}
+.fig .cell-pos{fill:var(--teal)} .fig .cell-neg{fill:var(--red)} .fig .cell-mid{fill:var(--ink-3)}
+.fig .cell-v{font-size:14px; font-weight:700; fill:var(--ink)}
+.fig .cell-t{font-size:11px; fill:var(--ink-2)}
+.fig .bar-carry{fill:var(--brass)}
+.fig .fund-mark{stroke:var(--ink); stroke-width:2.5}
+.fig .dot-fund{fill:var(--navy); stroke:var(--bg); stroke-width:2}
+.fig .pair{stroke:var(--rule); stroke-width:3}
+.fig .dot-proxy{fill:var(--navy); stroke:var(--bg); stroke-width:2}
+.fig .dot-hollow{fill:var(--bg); stroke:var(--navy); stroke-width:2}
+.fig .dot-always{fill:var(--brass); stroke:var(--bg); stroke-width:2}
+.fig .dot-first{fill:var(--bg); stroke:var(--brass); stroke-width:2.4}
+
+/* tables */
+table.data{width:100%; border-collapse:collapse; font:400 14.5px/1.45 var(--sans); margin:26px 0}
+table.data caption{text-align:left; font:400 14px/1.56 var(--sans); color:var(--ink-2); padding-bottom:12px}
+table.data th{text-align:left; font-weight:700; font-size:12px; letter-spacing:.04em; padding:9px 12px 9px 0;
+  border-bottom:1.5px solid var(--ink-3)}
+table.data td{padding:9px 12px 9px 0; border-bottom:1px solid var(--rule)}
+table.data td.n,table.data th.n{text-align:right; font-variant-numeric:tabular-nums}
+table.data tr.hl td{background:color-mix(in srgb,var(--brass-soft) 70%,transparent); font-weight:600}
+.tscroll{overflow-x:auto}
+
+/* register and references */
+ol.reg{list-style:none; padding:0; margin:26px 0}
+ol.reg li{display:grid; grid-template-columns:70px 1fr; gap:0 14px; padding:14px 0; border-bottom:1px solid var(--rule)}
+ol.reg .k{font:700 12px/1.6 var(--sans); color:var(--ink-3); letter-spacing:.05em}
+ol.reg li.pass .k{color:var(--brass)}
+ol.reg .t{font:700 14.5px/1.45 var(--sans); margin-bottom:3px}
+ol.reg .d{font:400 15.5px/1.5 var(--serif); color:var(--ink-2)}
+ol.refs{font:400 15px/1.56 var(--serif); color:var(--ink-2); padding-left:28px}
+ol.refs li{margin-bottom:10px} ol.refs i{color:var(--ink)}
+
+/* citation pop-ups */
+.cite{color:var(--brass); cursor:pointer; border-radius:2px}
+.cite:hover,.cite:focus-visible{text-decoration:underline; text-underline-offset:2px; outline:none}
+.cite-tip{position:fixed; z-index:20; max-width:min(440px,calc(100vw - 32px)); background:var(--bg-2);
+  color:var(--ink); border:1px solid var(--rule); border-radius:4px; padding:10px 14px;
+  font:400 14px/1.45 var(--sans); box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.cite-tip p{margin:0} .cite-tip p+p{margin-top:8px}
+
+.bar{position:fixed; left:0; right:0; bottom:0; background:var(--bg-2); border-top:1px solid var(--rule);
+  padding:9px 16px; display:flex; gap:14px; align-items:center; justify-content:center;
+  font:500 12.5px/1 var(--sans); color:var(--ink-3); z-index:9}
+.bar button{font:700 11.5px/1 var(--sans); letter-spacing:.08em; color:var(--ink-2); background:var(--bg);
+  border:1px solid var(--rule); border-radius:2px; padding:8px 13px; cursor:pointer}
+.bar button:hover{color:var(--brass); border-color:var(--brass)}
+@media (max-width:620px){
+  body{font-size:17px} .stand{font-size:18.5px} .stand .big{font-size:20.5px}
+  .bar span{display:none}
+  figure:not(.hero):not(.tide-fig):not(.divider){overflow-x:auto}
+  figure:not(.hero):not(.tide-fig):not(.divider) svg.fig{min-width:600px}
+  figure:not(.hero):not(.tide-fig):not(.divider) figcaption{position:sticky; left:0; max-width:calc(100vw - 32px)}
+}
+</style>
+<link rel="canonical" href="https://hydratrade.ciyalabs.com/v/">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<style id="ht-series-style">
+.ht-bar{font-style:normal;display:flex;justify-content:space-between;align-items:center;gap:16px;
+  max-width:1100px;margin:0 auto;padding:12px 20px;font:500 12px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;
+  letter-spacing:.08em;text-transform:uppercase}
+.ht-bar a{color:inherit;text-decoration:none;opacity:.72}
+.ht-bar a:first-child{display:inline-flex;align-items:center;gap:7px}
+.ht-mark{width:14px;height:14px;flex:none}
+.ht-bar a:hover{opacity:1}
+.ht-bar b{font-weight:600;opacity:1}
+.ht-series{font-style:normal;max-width:760px;margin:72px auto 120px;padding:0 20px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.ht-series h2{font-family:inherit;font-size:12px;font-weight:600;line-height:1.4;letter-spacing:.12em;text-transform:uppercase;opacity:.65;margin:0 0 14px}
+.ht-series .ht-nav{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ht-series a.ht-card{display:block;padding:16px 18px;color:inherit;text-decoration:none;
+  border:1px solid color-mix(in srgb,currentColor 22%,transparent);border-radius:4px;transition:border-color .2s}
+.ht-series a.ht-card:hover{border-color:currentColor}
+.ht-series .ht-dir{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.65;margin-bottom:6px}
+.ht-series .ht-t{display:block;font-size:16px;line-height:1.35;font-weight:600}
+.ht-series .ht-next{text-align:right;grid-column:2}
+.ht-series .ht-all{display:inline-block;margin-top:18px;color:inherit;font-size:14px;opacity:.75}
+.ht-series .ht-all:hover{opacity:1}
+.ht-series .ht-note{margin-top:22px;font-size:12px;line-height:1.6;opacity:.6}
+@media (max-width:620px){.ht-series .ht-nav{grid-template-columns:1fr}.ht-series .ht-next{grid-column:1;text-align:left}}
+</style>
+</head>
+<body>
+<nav class="ht-bar" aria-label="HydraTrade series"><a href="../"><svg class="ht-mark" viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M8 58V40l10-6v24zM27 58V28l10-6v36zM46 58V14l10-6v50z"/></svg><b>HydraTrade</b> &middot; Ciya Labs</a><a href="../#reports">All reports</a></nav>
+<div class="wrap">
+
+<header class="mast">
+  <div class="kicker">Report five · cryptocurrency · funding, venues and carry</div>
+  <h1>HydraTrade V: <em>Paid</em> to Wait</h1>
+  <p class="sub">Funding spreads between exchanges, why they cannot be traded at size, and the older trade that can</p>
+  <div class="byline"><span>Loghman Samani</span><span>Ciya Labs</span><span>November 2026</span></div>
+</header>
+
+<figure class="hero">
+  <img src="header.png" alt="A sepia engraving of two harbours under an overcast sky, tall sailing ships
+    at anchor on either side of a stone breakwater. A narrow canal cuts through the breakwater, and a single
+    rowboat with one oarsman is passing through it, too small a channel for any of the ships. On the far
+    quay a tidal mill turns a brass-coloured wheel." width="1916" height="821"
+    onerror="this.closest('figure').classList.add('noimg')">
+  <figcaption>Generated with OpenAI Image Generator</figcaption>
+</figure>
+
+<figure class="tide-fig">
+<!--tide-->
+<svg viewBox="0 0 720 92" class="fig tide" role="img" aria-label="A year of bitcoin funding on the first exchange, one tick per day for 366 days. Ticks above the line are days when shorts were paid, below when they paid.">
+<line class="tide-line" x1="0" x2="720" y1="46" y2="46"/>
+<line class="tide-up" x1="1.0" x2="1.0" y1="46" y2="34.7"><title>7 Oct 2025, +8.4% a year</title></line>
+<line class="tide-up" x1="3.0" x2="3.0" y1="46" y2="34.5"><title>8 Oct 2025, +8.7% a year</title></line>
+<line class="tide-up" x1="4.9" x2="4.9" y1="46" y2="32.1"><title>9 Oct 2025, +10.4% a year</title></line>
+<line class="tide-up" x1="6.9" x2="6.9" y1="46" y2="40.5"><title>10 Oct 2025, +4.1% a year</title></line>
+<line class="tide-up" x1="8.9" x2="8.9" y1="46" y2="41.1"><title>11 Oct 2025, +3.7% a year</title></line>
+<line class="tide-up" x1="10.8" x2="10.8" y1="46" y2="39.1"><title>12 Oct 2025, +5.2% a year</title></line>
+<line class="tide-up" x1="12.8" x2="12.8" y1="46" y2="39.3"><title>13 Oct 2025, +5.0% a year</title></line>
+<line class="tide-up" x1="14.8" x2="14.8" y1="46" y2="40.9"><title>14 Oct 2025, +3.8% a year</title></line>
+<line class="tide-up" x1="16.7" x2="16.7" y1="46" y2="38.4"><title>15 Oct 2025, +5.7% a year</title></line>
+<line class="tide-up" x1="18.7" x2="18.7" y1="46" y2="39.4"><title>16 Oct 2025, +4.9% a year</title></line>
+<line class="tide-up" x1="20.7" x2="20.7" y1="46" y2="42.9"><title>17 Oct 2025, +2.3% a year</title></line>
+<line class="tide-up" x1="22.6" x2="22.6" y1="46" y2="44.6"><title>18 Oct 2025, +1.1% a year</title></line>
+<line class="tide-up" x1="24.6" x2="24.6" y1="46" y2="43.2"><title>19 Oct 2025, +2.1% a year</title></line>
+<line class="tide-up" x1="26.6" x2="26.6" y1="46" y2="39.2"><title>20 Oct 2025, +5.1% a year</title></line>
+<line class="tide-up" x1="28.5" x2="28.5" y1="46" y2="40.6"><title>21 Oct 2025, +4.0% a year</title></line>
+<line class="tide-up" x1="30.5" x2="30.5" y1="46" y2="40.3"><title>22 Oct 2025, +4.3% a year</title></line>
+<line class="tide-up" x1="32.5" x2="32.5" y1="46" y2="39.2"><title>23 Oct 2025, +5.1% a year</title></line>
+<line class="tide-up" x1="34.4" x2="34.4" y1="46" y2="36.7"><title>24 Oct 2025, +7.0% a year</title></line>
+<line class="tide-up" x1="36.4" x2="36.4" y1="46" y2="38.7"><title>25 Oct 2025, +5.5% a year</title></line>
+<line class="tide-up" x1="38.4" x2="38.4" y1="46" y2="33.4"><title>26 Oct 2025, +9.4% a year</title></line>
+<line class="tide-up" x1="40.3" x2="40.3" y1="46" y2="33.8"><title>27 Oct 2025, +9.1% a year</title></line>
+<line class="tide-up" x1="42.3" x2="42.3" y1="46" y2="36.9"><title>28 Oct 2025, +6.8% a year</title></line>
+<line class="tide-up" x1="44.3" x2="44.3" y1="46" y2="38.1"><title>29 Oct 2025, +5.9% a year</title></line>
+<line class="tide-up" x1="46.2" x2="46.2" y1="46" y2="36.7"><title>30 Oct 2025, +7.0% a year</title></line>
+<line class="tide-up" x1="48.2" x2="48.2" y1="46" y2="36.6"><title>31 Oct 2025, +7.0% a year</title></line>
+<line class="tide-dn" x1="50.2" x2="50.2" y1="46" y2="47.0"><title>1 Nov 2025, &#8722;0.7% a year</title></line>
+<line class="tide-up" x1="52.1" x2="52.1" y1="46" y2="36.6"><title>2 Nov 2025, +7.1% a year</title></line>
+<line class="tide-up" x1="54.1" x2="54.1" y1="46" y2="36.8"><title>3 Nov 2025, +6.9% a year</title></line>
+<line class="tide-up" x1="56.1" x2="56.1" y1="46" y2="36.6"><title>4 Nov 2025, +7.1% a year</title></line>
+<line class="tide-up" x1="58.0" x2="58.0" y1="46" y2="39.1"><title>5 Nov 2025, +5.2% a year</title></line>
+<line class="tide-up" x1="60.0" x2="60.0" y1="46" y2="38.9"><title>6 Nov 2025, +5.4% a year</title></line>
+<line class="tide-up" x1="62.0" x2="62.0" y1="46" y2="36.7"><title>7 Nov 2025, +7.0% a year</title></line>
+<line class="tide-up" x1="63.9" x2="63.9" y1="46" y2="39.5"><title>8 Nov 2025, +4.9% a year</title></line>
+<line class="tide-up" x1="65.9" x2="65.9" y1="46" y2="41.6"><title>9 Nov 2025, +3.3% a year</title></line>
+<line class="tide-up" x1="67.9" x2="67.9" y1="46" y2="35.9"><title>10 Nov 2025, +7.6% a year</title></line>
+<line class="tide-up" x1="69.8" x2="69.8" y1="46" y2="36.9"><title>11 Nov 2025, +6.8% a year</title></line>
+<line class="tide-up" x1="71.8" x2="71.8" y1="46" y2="35.1"><title>12 Nov 2025, +8.2% a year</title></line>
+<line class="tide-up" x1="73.8" x2="73.8" y1="46" y2="36.6"><title>13 Nov 2025, +7.0% a year</title></line>
+<line class="tide-up" x1="75.7" x2="75.7" y1="46" y2="35.3"><title>14 Nov 2025, +8.0% a year</title></line>
+<line class="tide-up" x1="77.7" x2="77.7" y1="46" y2="34.7"><title>15 Nov 2025, +8.5% a year</title></line>
+<line class="tide-up" x1="79.7" x2="79.7" y1="46" y2="32.9"><title>16 Nov 2025, +9.8% a year</title></line>
+<line class="tide-up" x1="81.6" x2="81.6" y1="46" y2="27.8"><title>17 Nov 2025, +13.6% a year</title></line>
+<line class="tide-up" x1="83.6" x2="83.6" y1="46" y2="30.8"><title>18 Nov 2025, +11.4% a year</title></line>
+<line class="tide-up" x1="85.6" x2="85.6" y1="46" y2="31.5"><title>19 Nov 2025, +10.9% a year</title></line>
+<line class="tide-up" x1="87.5" x2="87.5" y1="46" y2="27.9"><title>20 Nov 2025, +13.6% a year</title></line>
+<line class="tide-up" x1="89.5" x2="89.5" y1="46" y2="36.3"><title>21 Nov 2025, +7.3% a year</title></line>
+<line class="tide-up" x1="91.5" x2="91.5" y1="46" y2="40.1"><title>22 Nov 2025, +4.4% a year</title></line>
+<line class="tide-up" x1="93.4" x2="93.4" y1="46" y2="44.5"><title>23 Nov 2025, +1.2% a year</title></line>
+<line class="tide-dn" x1="95.4" x2="95.4" y1="46" y2="47.4"><title>24 Nov 2025, &#8722;1.1% a year</title></line>
+<line class="tide-up" x1="97.4" x2="97.4" y1="46" y2="44.1"><title>25 Nov 2025, +1.4% a year</title></line>
+<line class="tide-up" x1="99.3" x2="99.3" y1="46" y2="43.6"><title>26 Nov 2025, +1.8% a year</title></line>
+<line class="tide-up" x1="101.3" x2="101.3" y1="46" y2="45.1"><title>27 Nov 2025, +0.7% a year</title></line>
+<line class="tide-up" x1="103.3" x2="103.3" y1="46" y2="42.5"><title>28 Nov 2025, +2.7% a year</title></line>
+<line class="tide-up" x1="105.2" x2="105.2" y1="46" y2="41.9"><title>29 Nov 2025, +3.1% a year</title></line>
+<line class="tide-up" x1="107.2" x2="107.2" y1="46" y2="41.3"><title>30 Nov 2025, +3.5% a year</title></line>
+<line class="tide-up" x1="109.2" x2="109.2" y1="46" y2="44.7"><title>1 Dec 2025, +0.9% a year</title></line>
+<line class="tide-dn" x1="111.1" x2="111.1" y1="46" y2="48.2"><title>2 Dec 2025, &#8722;1.6% a year</title></line>
+<line class="tide-up" x1="113.1" x2="113.1" y1="46" y2="42.3"><title>3 Dec 2025, +2.8% a year</title></line>
+<line class="tide-up" x1="115.1" x2="115.1" y1="46" y2="41.1"><title>4 Dec 2025, +3.7% a year</title></line>
+<line class="tide-up" x1="117.0" x2="117.0" y1="46" y2="42.2"><title>5 Dec 2025, +2.8% a year</title></line>
+<line class="tide-up" x1="119.0" x2="119.0" y1="46" y2="43.9"><title>6 Dec 2025, +1.5% a year</title></line>
+<line class="tide-up" x1="121.0" x2="121.0" y1="46" y2="43.1"><title>7 Dec 2025, +2.2% a year</title></line>
+<line class="tide-up" x1="123.0" x2="123.0" y1="46" y2="39.5"><title>8 Dec 2025, +4.9% a year</title></line>
+<line class="tide-up" x1="124.9" x2="124.9" y1="46" y2="44.0"><title>9 Dec 2025, +1.5% a year</title></line>
+<line class="tide-up" x1="126.9" x2="126.9" y1="46" y2="38.9"><title>10 Dec 2025, +5.3% a year</title></line>
+<line class="tide-up" x1="128.9" x2="128.9" y1="46" y2="36.3"><title>11 Dec 2025, +7.3% a year</title></line>
+<line class="tide-up" x1="130.8" x2="130.8" y1="46" y2="39.0"><title>12 Dec 2025, +5.3% a year</title></line>
+<line class="tide-up" x1="132.8" x2="132.8" y1="46" y2="43.5"><title>13 Dec 2025, +1.9% a year</title></line>
+<line class="tide-up" x1="134.8" x2="134.8" y1="46" y2="39.8"><title>14 Dec 2025, +4.6% a year</title></line>
+<line class="tide-up" x1="136.7" x2="136.7" y1="46" y2="39.3"><title>15 Dec 2025, +5.0% a year</title></line>
+<line class="tide-up" x1="138.7" x2="138.7" y1="46" y2="42.9"><title>16 Dec 2025, +2.3% a year</title></line>
+<line class="tide-up" x1="140.7" x2="140.7" y1="46" y2="39.5"><title>17 Dec 2025, +4.9% a year</title></line>
+<line class="tide-up" x1="142.6" x2="142.6" y1="46" y2="41.3"><title>18 Dec 2025, +3.6% a year</title></line>
+<line class="tide-up" x1="144.6" x2="144.6" y1="46" y2="38.0"><title>19 Dec 2025, +6.0% a year</title></line>
+<line class="tide-up" x1="146.6" x2="146.6" y1="46" y2="43.4"><title>20 Dec 2025, +2.0% a year</title></line>
+<line class="tide-up" x1="148.5" x2="148.5" y1="46" y2="38.5"><title>21 Dec 2025, +5.7% a year</title></line>
+<line class="tide-up" x1="150.5" x2="150.5" y1="46" y2="38.4"><title>22 Dec 2025, +5.7% a year</title></line>
+<line class="tide-up" x1="152.5" x2="152.5" y1="46" y2="36.6"><title>23 Dec 2025, +7.1% a year</title></line>
+<line class="tide-up" x1="154.4" x2="154.4" y1="46" y2="35.8"><title>24 Dec 2025, +7.7% a year</title></line>
+<line class="tide-up" x1="156.4" x2="156.4" y1="46" y2="39.3"><title>25 Dec 2025, +5.1% a year</title></line>
+<line class="tide-up" x1="158.4" x2="158.4" y1="46" y2="35.3"><title>26 Dec 2025, +8.0% a year</title></line>
+<line class="tide-up" x1="160.3" x2="160.3" y1="46" y2="37.1"><title>27 Dec 2025, +6.7% a year</title></line>
+<line class="tide-up" x1="162.3" x2="162.3" y1="46" y2="34.0"><title>28 Dec 2025, +9.0% a year</title></line>
+<line class="tide-up" x1="164.3" x2="164.3" y1="46" y2="29.0"><title>29 Dec 2025, +12.7% a year</title></line>
+<line class="tide-up" x1="166.2" x2="166.2" y1="46" y2="34.9"><title>30 Dec 2025, +8.3% a year</title></line>
+<line class="tide-up" x1="168.2" x2="168.2" y1="46" y2="26.8"><title>31 Dec 2025, +14.4% a year</title></line>
+<line class="tide-up" x1="170.2" x2="170.2" y1="46" y2="25.3"><title>1 Jan 2026, +15.6% a year</title></line>
+<line class="tide-up" x1="172.1" x2="172.1" y1="46" y2="39.7"><title>2 Jan 2026, +4.7% a year</title></line>
+<line class="tide-up" x1="174.1" x2="174.1" y1="46" y2="38.6"><title>3 Jan 2026, +5.5% a year</title></line>
+<line class="tide-up" x1="176.1" x2="176.1" y1="46" y2="33.4"><title>4 Jan 2026, +9.5% a year</title></line>
+<line class="tide-up" x1="178.0" x2="178.0" y1="46" y2="34.4"><title>5 Jan 2026, +8.7% a year</title></line>
+<line class="tide-up" x1="180.0" x2="180.0" y1="46" y2="34.7"><title>6 Jan 2026, +8.5% a year</title></line>
+<line class="tide-up" x1="182.0" x2="182.0" y1="46" y2="29.7"><title>7 Jan 2026, +12.2% a year</title></line>
+<line class="tide-up" x1="183.9" x2="183.9" y1="46" y2="33.6"><title>8 Jan 2026, +9.3% a year</title></line>
+<line class="tide-up" x1="185.9" x2="185.9" y1="46" y2="34.2"><title>9 Jan 2026, +8.9% a year</title></line>
+<line class="tide-up" x1="187.9" x2="187.9" y1="46" y2="31.5"><title>10 Jan 2026, +10.9% a year</title></line>
+<line class="tide-up" x1="189.8" x2="189.8" y1="46" y2="34.8"><title>11 Jan 2026, +8.4% a year</title></line>
+<line class="tide-up" x1="191.8" x2="191.8" y1="46" y2="35.0"><title>12 Jan 2026, +8.3% a year</title></line>
+<line class="tide-up" x1="193.8" x2="193.8" y1="46" y2="40.4"><title>13 Jan 2026, +4.2% a year</title></line>
+<line class="tide-up" x1="195.7" x2="195.7" y1="46" y2="41.2"><title>14 Jan 2026, +3.6% a year</title></line>
+<line class="tide-up" x1="197.7" x2="197.7" y1="46" y2="37.6"><title>15 Jan 2026, +6.3% a year</title></line>
+<line class="tide-up" x1="199.7" x2="199.7" y1="46" y2="34.9"><title>16 Jan 2026, +8.4% a year</title></line>
+<line class="tide-up" x1="201.6" x2="201.6" y1="46" y2="40.2"><title>17 Jan 2026, +4.4% a year</title></line>
+<line class="tide-up" x1="203.6" x2="203.6" y1="46" y2="35.9"><title>18 Jan 2026, +7.6% a year</title></line>
+<line class="tide-up" x1="205.6" x2="205.6" y1="46" y2="41.4"><title>19 Jan 2026, +3.5% a year</title></line>
+<line class="tide-up" x1="207.5" x2="207.5" y1="46" y2="35.2"><title>20 Jan 2026, +8.1% a year</title></line>
+<line class="tide-up" x1="209.5" x2="209.5" y1="46" y2="35.4"><title>21 Jan 2026, +7.9% a year</title></line>
+<line class="tide-up" x1="211.5" x2="211.5" y1="46" y2="35.1"><title>22 Jan 2026, +8.2% a year</title></line>
+<line class="tide-up" x1="213.4" x2="213.4" y1="46" y2="34.5"><title>23 Jan 2026, +8.7% a year</title></line>
+<line class="tide-up" x1="215.4" x2="215.4" y1="46" y2="29.6"><title>24 Jan 2026, +12.3% a year</title></line>
+<line class="tide-up" x1="217.4" x2="217.4" y1="46" y2="31.6"><title>25 Jan 2026, +10.8% a year</title></line>
+<line class="tide-up" x1="219.3" x2="219.3" y1="46" y2="40.1"><title>26 Jan 2026, +4.4% a year</title></line>
+<line class="tide-up" x1="221.3" x2="221.3" y1="46" y2="36.6"><title>27 Jan 2026, +7.0% a year</title></line>
+<line class="tide-up" x1="223.3" x2="223.3" y1="46" y2="35.7"><title>28 Jan 2026, +7.8% a year</title></line>
+<line class="tide-up" x1="225.2" x2="225.2" y1="46" y2="32.4"><title>29 Jan 2026, +10.2% a year</title></line>
+<line class="tide-up" x1="227.2" x2="227.2" y1="46" y2="43.4"><title>30 Jan 2026, +2.0% a year</title></line>
+<line class="tide-up" x1="229.2" x2="229.2" y1="46" y2="43.2"><title>31 Jan 2026, +2.1% a year</title></line>
+<line class="tide-dn" x1="231.1" x2="231.1" y1="46" y2="62.1"><title>1 Feb 2026, &#8722;12.1% a year</title></line>
+<line class="tide-up" x1="233.1" x2="233.1" y1="46" y2="45.3"><title>2 Feb 2026, +0.5% a year</title></line>
+<line class="tide-up" x1="235.1" x2="235.1" y1="46" y2="44.8"><title>3 Feb 2026, +0.9% a year</title></line>
+<line class="tide-up" x1="237.0" x2="237.0" y1="46" y2="38.4"><title>4 Feb 2026, +5.7% a year</title></line>
+<line class="tide-up" x1="239.0" x2="239.0" y1="46" y2="44.5"><title>5 Feb 2026, +1.1% a year</title></line>
+<line class="tide-dn" x1="241.0" x2="241.0" y1="46" y2="56.1"><title>6 Feb 2026, &#8722;7.6% a year</title></line>
+<line class="tide-dn" x1="243.0" x2="243.0" y1="46" y2="48.3"><title>7 Feb 2026, &#8722;1.7% a year</title></line>
+<line class="tide-dn" x1="244.9" x2="244.9" y1="46" y2="49.3"><title>8 Feb 2026, &#8722;2.5% a year</title></line>
+<line class="tide-dn" x1="246.9" x2="246.9" y1="46" y2="48.8"><title>9 Feb 2026, &#8722;2.1% a year</title></line>
+<line class="tide-dn" x1="248.9" x2="248.9" y1="46" y2="49.9"><title>10 Feb 2026, &#8722;2.9% a year</title></line>
+<line class="tide-up" x1="250.8" x2="250.8" y1="46" y2="45.9"><title>11 Feb 2026, +0.1% a year</title></line>
+<line class="tide-up" x1="252.8" x2="252.8" y1="46" y2="40.9"><title>12 Feb 2026, +3.8% a year</title></line>
+<line class="tide-up" x1="254.8" x2="254.8" y1="46" y2="45.3"><title>13 Feb 2026, +0.6% a year</title></line>
+<line class="tide-dn" x1="256.7" x2="256.7" y1="46" y2="46.2"><title>14 Feb 2026, &#8722;0.2% a year</title></line>
+<line class="tide-up" x1="258.7" x2="258.7" y1="46" y2="44.2"><title>15 Feb 2026, +1.4% a year</title></line>
+<line class="tide-up" x1="260.7" x2="260.7" y1="46" y2="43.8"><title>16 Feb 2026, +1.6% a year</title></line>
+<line class="tide-up" x1="262.6" x2="262.6" y1="46" y2="45.9"><title>17 Feb 2026, +0.1% a year</title></line>
+<line class="tide-up" x1="264.6" x2="264.6" y1="46" y2="45.1"><title>18 Feb 2026, +0.7% a year</title></line>
+<line class="tide-up" x1="266.6" x2="266.6" y1="46" y2="45.1"><title>19 Feb 2026, +0.7% a year</title></line>
+<line class="tide-up" x1="268.5" x2="268.5" y1="46" y2="43.2"><title>20 Feb 2026, +2.1% a year</title></line>
+<line class="tide-up" x1="270.5" x2="270.5" y1="46" y2="46.0"><title>21 Feb 2026, 0.0% a year</title></line>
+<line class="tide-up" x1="272.5" x2="272.5" y1="46" y2="43.9"><title>22 Feb 2026, +1.6% a year</title></line>
+<line class="tide-dn" x1="274.4" x2="274.4" y1="46" y2="51.4"><title>23 Feb 2026, &#8722;4.1% a year</title></line>
+<line class="tide-dn" x1="276.4" x2="276.4" y1="46" y2="50.7"><title>24 Feb 2026, &#8722;3.5% a year</title></line>
+<line class="tide-dn" x1="278.4" x2="278.4" y1="46" y2="50.1"><title>25 Feb 2026, &#8722;3.1% a year</title></line>
+<line class="tide-up" x1="280.3" x2="280.3" y1="46" y2="45.3"><title>26 Feb 2026, +0.5% a year</title></line>
+<line class="tide-up" x1="282.3" x2="282.3" y1="46" y2="45.6"><title>27 Feb 2026, +0.3% a year</title></line>
+<line class="tide-dn" x1="284.3" x2="284.3" y1="46" y2="53.3"><title>28 Feb 2026, &#8722;5.5% a year</title></line>
+<line class="tide-dn" x1="286.2" x2="286.2" y1="46" y2="49.8"><title>1 Mar 2026, &#8722;2.8% a year</title></line>
+<line class="tide-dn" x1="288.2" x2="288.2" y1="46" y2="49.4"><title>2 Mar 2026, &#8722;2.6% a year</title></line>
+<line class="tide-dn" x1="290.2" x2="290.2" y1="46" y2="47.4"><title>3 Mar 2026, &#8722;1.1% a year</title></line>
+<line class="tide-dn" x1="292.1" x2="292.1" y1="46" y2="53.5"><title>4 Mar 2026, &#8722;5.6% a year</title></line>
+<line class="tide-dn" x1="294.1" x2="294.1" y1="46" y2="47.0"><title>5 Mar 2026, &#8722;0.8% a year</title></line>
+<line class="tide-dn" x1="296.1" x2="296.1" y1="46" y2="47.0"><title>6 Mar 2026, &#8722;0.8% a year</title></line>
+<line class="tide-dn" x1="298.0" x2="298.0" y1="46" y2="46.1"><title>7 Mar 2026, &#8722;0.1% a year</title></line>
+<line class="tide-up" x1="300.0" x2="300.0" y1="46" y2="44.9"><title>8 Mar 2026, +0.8% a year</title></line>
+<line class="tide-dn" x1="302.0" x2="302.0" y1="46" y2="52.0"><title>9 Mar 2026, &#8722;4.5% a year</title></line>
+<line class="tide-dn" x1="303.9" x2="303.9" y1="46" y2="57.0"><title>10 Mar 2026, &#8722;8.2% a year</title></line>
+<line class="tide-dn" x1="305.9" x2="305.9" y1="46" y2="56.0"><title>11 Mar 2026, &#8722;7.5% a year</title></line>
+<line class="tide-dn" x1="307.9" x2="307.9" y1="46" y2="55.0"><title>12 Mar 2026, &#8722;6.8% a year</title></line>
+<line class="tide-dn" x1="309.8" x2="309.8" y1="46" y2="47.1"><title>13 Mar 2026, &#8722;0.8% a year</title></line>
+<line class="tide-dn" x1="311.8" x2="311.8" y1="46" y2="50.8"><title>14 Mar 2026, &#8722;3.6% a year</title></line>
+<line class="tide-dn" x1="313.8" x2="313.8" y1="46" y2="52.0"><title>15 Mar 2026, &#8722;4.5% a year</title></line>
+<line class="tide-dn" x1="315.7" x2="315.7" y1="46" y2="46.2"><title>16 Mar 2026, &#8722;0.2% a year</title></line>
+<line class="tide-up" x1="317.7" x2="317.7" y1="46" y2="45.6"><title>17 Mar 2026, +0.3% a year</title></line>
+<line class="tide-up" x1="319.7" x2="319.7" y1="46" y2="45.2"><title>18 Mar 2026, +0.6% a year</title></line>
+<line class="tide-up" x1="321.6" x2="321.6" y1="46" y2="42.3"><title>19 Mar 2026, +2.8% a year</title></line>
+<line class="tide-up" x1="323.6" x2="323.6" y1="46" y2="43.2"><title>20 Mar 2026, +2.1% a year</title></line>
+<line class="tide-up" x1="325.6" x2="325.6" y1="46" y2="44.0"><title>21 Mar 2026, +1.5% a year</title></line>
+<line class="tide-dn" x1="327.5" x2="327.5" y1="46" y2="48.4"><title>22 Mar 2026, &#8722;1.8% a year</title></line>
+<line class="tide-up" x1="329.5" x2="329.5" y1="46" y2="44.6"><title>23 Mar 2026, +1.1% a year</title></line>
+<line class="tide-up" x1="331.5" x2="331.5" y1="46" y2="37.8"><title>24 Mar 2026, +6.1% a year</title></line>
+<line class="tide-up" x1="333.4" x2="333.4" y1="46" y2="40.0"><title>25 Mar 2026, +4.5% a year</title></line>
+<line class="tide-up" x1="335.4" x2="335.4" y1="46" y2="37.7"><title>26 Mar 2026, +6.2% a year</title></line>
+<line class="tide-up" x1="337.4" x2="337.4" y1="46" y2="43.5"><title>27 Mar 2026, +1.9% a year</title></line>
+<line class="tide-dn" x1="339.3" x2="339.3" y1="46" y2="53.6"><title>28 Mar 2026, &#8722;5.7% a year</title></line>
+<line class="tide-dn" x1="341.3" x2="341.3" y1="46" y2="47.0"><title>29 Mar 2026, &#8722;0.8% a year</title></line>
+<line class="tide-dn" x1="343.3" x2="343.3" y1="46" y2="49.8"><title>30 Mar 2026, &#8722;2.9% a year</title></line>
+<line class="tide-up" x1="345.2" x2="345.2" y1="46" y2="43.9"><title>31 Mar 2026, +1.6% a year</title></line>
+<line class="tide-dn" x1="347.2" x2="347.2" y1="46" y2="50.2"><title>1 Apr 2026, &#8722;3.1% a year</title></line>
+<line class="tide-dn" x1="349.2" x2="349.2" y1="46" y2="52.9"><title>2 Apr 2026, &#8722;5.1% a year</title></line>
+<line class="tide-dn" x1="351.1" x2="351.1" y1="46" y2="49.9"><title>3 Apr 2026, &#8722;2.9% a year</title></line>
+<line class="tide-dn" x1="353.1" x2="353.1" y1="46" y2="46.6"><title>4 Apr 2026, &#8722;0.4% a year</title></line>
+<line class="tide-dn" x1="355.1" x2="355.1" y1="46" y2="48.7"><title>5 Apr 2026, &#8722;2.0% a year</title></line>
+<line class="tide-dn" x1="357.0" x2="357.0" y1="46" y2="48.9"><title>6 Apr 2026, &#8722;2.2% a year</title></line>
+<line class="tide-up" x1="359.0" x2="359.0" y1="46" y2="42.7"><title>7 Apr 2026, +2.5% a year</title></line>
+<line class="tide-dn" x1="361.0" x2="361.0" y1="46" y2="47.9"><title>8 Apr 2026, &#8722;1.4% a year</title></line>
+<line class="tide-dn" x1="363.0" x2="363.0" y1="46" y2="51.9"><title>9 Apr 2026, &#8722;4.4% a year</title></line>
+<line class="tide-dn" x1="364.9" x2="364.9" y1="46" y2="53.4"><title>10 Apr 2026, &#8722;5.5% a year</title></line>
+<line class="tide-dn" x1="366.9" x2="366.9" y1="46" y2="54.0"><title>11 Apr 2026, &#8722;6.0% a year</title></line>
+<line class="tide-dn" x1="368.9" x2="368.9" y1="46" y2="51.6"><title>12 Apr 2026, &#8722;4.2% a year</title></line>
+<line class="tide-dn" x1="370.8" x2="370.8" y1="46" y2="54.9"><title>13 Apr 2026, &#8722;6.6% a year</title></line>
+<line class="tide-dn" x1="372.8" x2="372.8" y1="46" y2="52.2"><title>14 Apr 2026, &#8722;4.7% a year</title></line>
+<line class="tide-dn" x1="374.8" x2="374.8" y1="46" y2="53.1"><title>15 Apr 2026, &#8722;5.3% a year</title></line>
+<line class="tide-dn" x1="376.7" x2="376.7" y1="46" y2="47.5"><title>16 Apr 2026, &#8722;1.2% a year</title></line>
+<line class="tide-dn" x1="378.7" x2="378.7" y1="46" y2="49.4"><title>17 Apr 2026, &#8722;2.6% a year</title></line>
+<line class="tide-dn" x1="380.7" x2="380.7" y1="46" y2="51.7"><title>18 Apr 2026, &#8722;4.3% a year</title></line>
+<line class="tide-dn" x1="382.6" x2="382.6" y1="46" y2="51.9"><title>19 Apr 2026, &#8722;4.4% a year</title></line>
+<line class="tide-dn" x1="384.6" x2="384.6" y1="46" y2="62.2"><title>20 Apr 2026, &#8722;12.2% a year</title></line>
+<line class="tide-dn" x1="386.6" x2="386.6" y1="46" y2="52.6"><title>21 Apr 2026, &#8722;4.9% a year</title></line>
+<line class="tide-dn" x1="388.5" x2="388.5" y1="46" y2="51.4"><title>22 Apr 2026, &#8722;4.0% a year</title></line>
+<line class="tide-dn" x1="390.5" x2="390.5" y1="46" y2="53.2"><title>23 Apr 2026, &#8722;5.4% a year</title></line>
+<line class="tide-dn" x1="392.5" x2="392.5" y1="46" y2="50.3"><title>24 Apr 2026, &#8722;3.2% a year</title></line>
+<line class="tide-dn" x1="394.4" x2="394.4" y1="46" y2="49.7"><title>25 Apr 2026, &#8722;2.8% a year</title></line>
+<line class="tide-dn" x1="396.4" x2="396.4" y1="46" y2="47.4"><title>26 Apr 2026, &#8722;1.0% a year</title></line>
+<line class="tide-up" x1="398.4" x2="398.4" y1="46" y2="44.0"><title>27 Apr 2026, +1.5% a year</title></line>
+<line class="tide-dn" x1="400.3" x2="400.3" y1="46" y2="50.4"><title>28 Apr 2026, &#8722;3.3% a year</title></line>
+<line class="tide-dn" x1="402.3" x2="402.3" y1="46" y2="48.8"><title>29 Apr 2026, &#8722;2.1% a year</title></line>
+<line class="tide-dn" x1="404.3" x2="404.3" y1="46" y2="48.3"><title>30 Apr 2026, &#8722;1.7% a year</title></line>
+<line class="tide-dn" x1="406.2" x2="406.2" y1="46" y2="49.3"><title>1 May 2026, &#8722;2.5% a year</title></line>
+<line class="tide-dn" x1="408.2" x2="408.2" y1="46" y2="49.7"><title>2 May 2026, &#8722;2.8% a year</title></line>
+<line class="tide-dn" x1="410.2" x2="410.2" y1="46" y2="46.3"><title>3 May 2026, &#8722;0.2% a year</title></line>
+<line class="tide-dn" x1="412.1" x2="412.1" y1="46" y2="51.4"><title>4 May 2026, &#8722;4.0% a year</title></line>
+<line class="tide-dn" x1="414.1" x2="414.1" y1="46" y2="55.2"><title>5 May 2026, &#8722;6.9% a year</title></line>
+<line class="tide-dn" x1="416.1" x2="416.1" y1="46" y2="52.4"><title>6 May 2026, &#8722;4.8% a year</title></line>
+<line class="tide-dn" x1="418.0" x2="418.0" y1="46" y2="46.8"><title>7 May 2026, &#8722;0.6% a year</title></line>
+<line class="tide-up" x1="420.0" x2="420.0" y1="46" y2="42.2"><title>8 May 2026, +2.9% a year</title></line>
+<line class="tide-up" x1="422.0" x2="422.0" y1="46" y2="45.6"><title>9 May 2026, +0.3% a year</title></line>
+<line class="tide-up" x1="423.9" x2="423.9" y1="46" y2="45.6"><title>10 May 2026, +0.3% a year</title></line>
+<line class="tide-up" x1="425.9" x2="425.9" y1="46" y2="45.2"><title>11 May 2026, +0.6% a year</title></line>
+<line class="tide-up" x1="427.9" x2="427.9" y1="46" y2="45.3"><title>12 May 2026, +0.5% a year</title></line>
+<line class="tide-up" x1="429.8" x2="429.8" y1="46" y2="41.9"><title>13 May 2026, +3.1% a year</title></line>
+<line class="tide-up" x1="431.8" x2="431.8" y1="46" y2="43.2"><title>14 May 2026, +2.1% a year</title></line>
+<line class="tide-dn" x1="433.8" x2="433.8" y1="46" y2="48.3"><title>15 May 2026, &#8722;1.7% a year</title></line>
+<line class="tide-dn" x1="435.7" x2="435.7" y1="46" y2="49.1"><title>16 May 2026, &#8722;2.3% a year</title></line>
+<line class="tide-dn" x1="437.7" x2="437.7" y1="46" y2="48.0"><title>17 May 2026, &#8722;1.5% a year</title></line>
+<line class="tide-up" x1="439.7" x2="439.7" y1="46" y2="44.6"><title>18 May 2026, +1.1% a year</title></line>
+<line class="tide-up" x1="441.6" x2="441.6" y1="46" y2="40.2"><title>19 May 2026, +4.4% a year</title></line>
+<line class="tide-up" x1="443.6" x2="443.6" y1="46" y2="40.0"><title>20 May 2026, +4.5% a year</title></line>
+<line class="tide-up" x1="445.6" x2="445.6" y1="46" y2="44.2"><title>21 May 2026, +1.4% a year</title></line>
+<line class="tide-up" x1="447.5" x2="447.5" y1="46" y2="43.4"><title>22 May 2026, +1.9% a year</title></line>
+<line class="tide-up" x1="449.5" x2="449.5" y1="46" y2="42.0"><title>23 May 2026, +3.0% a year</title></line>
+<line class="tide-up" x1="451.5" x2="451.5" y1="46" y2="45.5"><title>24 May 2026, +0.4% a year</title></line>
+<line class="tide-dn" x1="453.4" x2="453.4" y1="46" y2="46.0"><title>25 May 2026, 0.0% a year</title></line>
+<line class="tide-up" x1="455.4" x2="455.4" y1="46" y2="41.6"><title>26 May 2026, +3.3% a year</title></line>
+<line class="tide-up" x1="457.4" x2="457.4" y1="46" y2="40.5"><title>27 May 2026, +4.1% a year</title></line>
+<line class="tide-up" x1="459.3" x2="459.3" y1="46" y2="38.8"><title>28 May 2026, +5.4% a year</title></line>
+<line class="tide-up" x1="461.3" x2="461.3" y1="46" y2="44.1"><title>29 May 2026, +1.5% a year</title></line>
+<line class="tide-dn" x1="463.3" x2="463.3" y1="46" y2="46.1"><title>30 May 2026, &#8722;0.1% a year</title></line>
+<line class="tide-up" x1="465.2" x2="465.2" y1="46" y2="44.0"><title>31 May 2026, +1.5% a year</title></line>
+<line class="tide-up" x1="467.2" x2="467.2" y1="46" y2="44.6"><title>1 Jun 2026, +1.0% a year</title></line>
+<line class="tide-dn" x1="469.2" x2="469.2" y1="46" y2="54.1"><title>2 Jun 2026, &#8722;6.1% a year</title></line>
+<line class="tide-dn" x1="471.1" x2="471.1" y1="46" y2="50.4"><title>3 Jun 2026, &#8722;3.3% a year</title></line>
+<line class="tide-dn" x1="473.1" x2="473.1" y1="46" y2="56.1"><title>4 Jun 2026, &#8722;7.5% a year</title></line>
+<line class="tide-dn" x1="475.1" x2="475.1" y1="46" y2="53.5"><title>5 Jun 2026, &#8722;5.6% a year</title></line>
+<line class="tide-up" x1="477.0" x2="477.0" y1="46" y2="44.8"><title>6 Jun 2026, +0.9% a year</title></line>
+<line class="tide-up" x1="479.0" x2="479.0" y1="46" y2="40.4"><title>7 Jun 2026, +4.2% a year</title></line>
+<line class="tide-up" x1="481.0" x2="481.0" y1="46" y2="39.1"><title>8 Jun 2026, +5.2% a year</title></line>
+<line class="tide-up" x1="483.0" x2="483.0" y1="46" y2="40.8"><title>9 Jun 2026, +3.9% a year</title></line>
+<line class="tide-dn" x1="484.9" x2="484.9" y1="46" y2="46.8"><title>10 Jun 2026, &#8722;0.6% a year</title></line>
+<line class="tide-up" x1="486.9" x2="486.9" y1="46" y2="45.5"><title>11 Jun 2026, +0.4% a year</title></line>
+<line class="tide-dn" x1="488.9" x2="488.9" y1="46" y2="46.7"><title>12 Jun 2026, &#8722;0.5% a year</title></line>
+<line class="tide-dn" x1="490.8" x2="490.8" y1="46" y2="49.3"><title>13 Jun 2026, &#8722;2.5% a year</title></line>
+<line class="tide-up" x1="492.8" x2="492.8" y1="46" y2="38.6"><title>14 Jun 2026, +5.5% a year</title></line>
+<line class="tide-up" x1="494.8" x2="494.8" y1="46" y2="42.2"><title>15 Jun 2026, +2.8% a year</title></line>
+<line class="tide-up" x1="496.7" x2="496.7" y1="46" y2="38.5"><title>16 Jun 2026, +5.6% a year</title></line>
+<line class="tide-dn" x1="498.7" x2="498.7" y1="46" y2="47.7"><title>17 Jun 2026, &#8722;1.2% a year</title></line>
+<line class="tide-up" x1="500.7" x2="500.7" y1="46" y2="41.8"><title>18 Jun 2026, +3.2% a year</title></line>
+<line class="tide-dn" x1="502.6" x2="502.6" y1="46" y2="58.9"><title>19 Jun 2026, &#8722;9.7% a year</title></line>
+<line class="tide-dn" x1="504.6" x2="504.6" y1="46" y2="51.5"><title>20 Jun 2026, &#8722;4.1% a year</title></line>
+<line class="tide-dn" x1="506.6" x2="506.6" y1="46" y2="48.2"><title>21 Jun 2026, &#8722;1.7% a year</title></line>
+<line class="tide-up" x1="508.5" x2="508.5" y1="46" y2="44.4"><title>22 Jun 2026, +1.2% a year</title></line>
+<line class="tide-dn" x1="510.5" x2="510.5" y1="46" y2="46.7"><title>23 Jun 2026, &#8722;0.6% a year</title></line>
+<line class="tide-up" x1="512.5" x2="512.5" y1="46" y2="43.0"><title>24 Jun 2026, +2.2% a year</title></line>
+<line class="tide-dn" x1="514.4" x2="514.4" y1="46" y2="46.2"><title>25 Jun 2026, &#8722;0.1% a year</title></line>
+<line class="tide-dn" x1="516.4" x2="516.4" y1="46" y2="47.6"><title>26 Jun 2026, &#8722;1.2% a year</title></line>
+<line class="tide-up" x1="518.4" x2="518.4" y1="46" y2="40.7"><title>27 Jun 2026, +4.0% a year</title></line>
+<line class="tide-dn" x1="520.3" x2="520.3" y1="46" y2="54.5"><title>28 Jun 2026, &#8722;6.4% a year</title></line>
+<line class="tide-up" x1="522.3" x2="522.3" y1="46" y2="32.9"><title>29 Jun 2026, +9.8% a year</title></line>
+<line class="tide-up" x1="524.3" x2="524.3" y1="46" y2="35.1"><title>30 Jun 2026, +8.2% a year</title></line>
+<line class="tide-dn" x1="526.2" x2="526.2" y1="46" y2="48.3"><title>1 Jul 2026, &#8722;1.7% a year</title></line>
+<line class="tide-up" x1="528.2" x2="528.2" y1="46" y2="42.5"><title>2 Jul 2026, +2.6% a year</title></line>
+<line class="tide-up" x1="530.2" x2="530.2" y1="46" y2="23.4"><title>3 Jul 2026, +17.0% a year</title></line>
+<line class="tide-up" x1="532.1" x2="532.1" y1="46" y2="41.3"><title>4 Jul 2026, +3.5% a year</title></line>
+<line class="tide-up" x1="534.1" x2="534.1" y1="46" y2="35.8"><title>5 Jul 2026, +7.7% a year</title></line>
+<line class="tide-up" x1="536.1" x2="536.1" y1="46" y2="32.0"><title>6 Jul 2026, +10.5% a year</title></line>
+<line class="tide-up" x1="538.0" x2="538.0" y1="46" y2="44.1"><title>7 Jul 2026, +1.5% a year</title></line>
+<line class="tide-up" x1="540.0" x2="540.0" y1="46" y2="33.7"><title>8 Jul 2026, +9.2% a year</title></line>
+<line class="tide-up" x1="542.0" x2="542.0" y1="46" y2="37.5"><title>9 Jul 2026, +6.3% a year</title></line>
+<line class="tide-up" x1="543.9" x2="543.9" y1="46" y2="39.3"><title>10 Jul 2026, +5.0% a year</title></line>
+<line class="tide-up" x1="545.9" x2="545.9" y1="46" y2="44.4"><title>11 Jul 2026, +1.2% a year</title></line>
+<line class="tide-up" x1="547.9" x2="547.9" y1="46" y2="37.4"><title>12 Jul 2026, +6.4% a year</title></line>
+<line class="tide-up" x1="549.8" x2="549.8" y1="46" y2="32.7"><title>13 Jul 2026, +10.0% a year</title></line>
+<line class="tide-up" x1="551.8" x2="551.8" y1="46" y2="43.9"><title>14 Jul 2026, +1.6% a year</title></line>
+<line class="tide-up" x1="553.8" x2="553.8" y1="46" y2="39.6"><title>15 Jul 2026, +4.8% a year</title></line>
+<line class="tide-up" x1="555.7" x2="555.7" y1="46" y2="37.4"><title>16 Jul 2026, +6.4% a year</title></line>
+<line class="tide-up" x1="557.7" x2="557.7" y1="46" y2="38.1"><title>17 Jul 2026, +5.9% a year</title></line>
+<line class="tide-up" x1="559.7" x2="559.7" y1="46" y2="39.1"><title>18 Jul 2026, +5.2% a year</title></line>
+<line class="tide-up" x1="561.6" x2="561.6" y1="46" y2="44.0"><title>19 Jul 2026, +1.5% a year</title></line>
+<line class="tide-up" x1="563.6" x2="563.6" y1="46" y2="37.4"><title>20 Jul 2026, +6.5% a year</title></line>
+<line class="tide-dn" x1="565.6" x2="565.6" y1="46" y2="52.5"><title>21 Jul 2026, &#8722;4.9% a year</title></line>
+<line class="tide-up" x1="567.5" x2="567.5" y1="46" y2="39.3"><title>22 Jul 2026, +5.0% a year</title></line>
+<line class="tide-up" x1="569.5" x2="569.5" y1="46" y2="37.1"><title>23 Jul 2026, +6.7% a year</title></line>
+<line class="tide-up" x1="571.5" x2="571.5" y1="46" y2="34.5"><title>24 Jul 2026, +8.7% a year</title></line>
+<line class="tide-up" x1="573.4" x2="573.4" y1="46" y2="43.7"><title>25 Jul 2026, +1.7% a year</title></line>
+<line class="tide-up" x1="575.4" x2="575.4" y1="46" y2="38.0"><title>26 Jul 2026, +6.0% a year</title></line>
+<line class="tide-up" x1="577.4" x2="577.4" y1="46" y2="35.6"><title>27 Jul 2026, +7.8% a year</title></line>
+<line class="tide-up" x1="579.3" x2="579.3" y1="46" y2="35.8"><title>28 Jul 2026, +7.7% a year</title></line>
+<line class="tide-up" x1="581.3" x2="581.3" y1="46" y2="33.5"><title>29 Jul 2026, +9.4% a year</title></line>
+<line class="tide-up" x1="583.3" x2="583.3" y1="46" y2="38.9"><title>30 Jul 2026, +5.3% a year</title></line>
+<line class="tide-up" x1="585.2" x2="585.2" y1="46" y2="38.1"><title>31 Jul 2026, +5.9% a year</title></line>
+<line class="tide-up" x1="587.2" x2="587.2" y1="46" y2="40.9"><title>1 Aug 2026, +3.8% a year</title></line>
+<line class="tide-up" x1="589.2" x2="589.2" y1="46" y2="32.5"><title>2 Aug 2026, +10.1% a year</title></line>
+<line class="tide-up" x1="591.1" x2="591.1" y1="46" y2="45.4"><title>3 Aug 2026, +0.5% a year</title></line>
+<line class="tide-dn" x1="593.1" x2="593.1" y1="46" y2="46.6"><title>4 Aug 2026, &#8722;0.4% a year</title></line>
+<line class="tide-dn" x1="595.1" x2="595.1" y1="46" y2="48.3"><title>5 Aug 2026, &#8722;1.7% a year</title></line>
+<line class="tide-up" x1="597.0" x2="597.0" y1="46" y2="41.6"><title>6 Aug 2026, +3.3% a year</title></line>
+<line class="tide-dn" x1="599.0" x2="599.0" y1="46" y2="48.4"><title>7 Aug 2026, &#8722;1.8% a year</title></line>
+<line class="tide-dn" x1="601.0" x2="601.0" y1="46" y2="47.0"><title>8 Aug 2026, &#8722;0.8% a year</title></line>
+<line class="tide-up" x1="603.0" x2="603.0" y1="46" y2="39.7"><title>9 Aug 2026, +4.7% a year</title></line>
+<line class="tide-up" x1="604.9" x2="604.9" y1="46" y2="37.8"><title>10 Aug 2026, +6.1% a year</title></line>
+<line class="tide-up" x1="606.9" x2="606.9" y1="46" y2="41.1"><title>11 Aug 2026, +3.7% a year</title></line>
+<line class="tide-up" x1="608.9" x2="608.9" y1="46" y2="40.0"><title>12 Aug 2026, +4.5% a year</title></line>
+<line class="tide-up" x1="610.8" x2="610.8" y1="46" y2="33.8"><title>13 Aug 2026, +9.2% a year</title></line>
+<line class="tide-up" x1="612.8" x2="612.8" y1="46" y2="39.3"><title>14 Aug 2026, +5.0% a year</title></line>
+<line class="tide-up" x1="614.8" x2="614.8" y1="46" y2="45.3"><title>15 Aug 2026, +0.5% a year</title></line>
+<line class="tide-dn" x1="616.7" x2="616.7" y1="46" y2="48.3"><title>16 Aug 2026, &#8722;1.7% a year</title></line>
+<line class="tide-dn" x1="618.7" x2="618.7" y1="46" y2="49.9"><title>17 Aug 2026, &#8722;3.0% a year</title></line>
+<line class="tide-dn" x1="620.7" x2="620.7" y1="46" y2="46.2"><title>18 Aug 2026, &#8722;0.1% a year</title></line>
+<line class="tide-up" x1="622.6" x2="622.6" y1="46" y2="43.5"><title>19 Aug 2026, +1.9% a year</title></line>
+<line class="tide-up" x1="624.6" x2="624.6" y1="46" y2="43.6"><title>20 Aug 2026, +1.8% a year</title></line>
+<line class="tide-up" x1="626.6" x2="626.6" y1="46" y2="15.6"><title>21 Aug 2026, +22.8% a year</title></line>
+<line class="tide-up" x1="628.5" x2="628.5" y1="46" y2="11.9"><title>22 Aug 2026, +25.6% a year</title></line>
+<line class="tide-up" x1="630.5" x2="630.5" y1="46" y2="14.7"><title>23 Aug 2026, +23.5% a year</title></line>
+<line class="tide-up" x1="632.5" x2="632.5" y1="46" y2="38.3"><title>24 Aug 2026, +5.7% a year</title></line>
+<line class="tide-up" x1="634.4" x2="634.4" y1="46" y2="41.5"><title>25 Aug 2026, +3.4% a year</title></line>
+<line class="tide-up" x1="636.4" x2="636.4" y1="46" y2="40.1"><title>26 Aug 2026, +4.4% a year</title></line>
+<line class="tide-up" x1="638.4" x2="638.4" y1="46" y2="37.0"><title>27 Aug 2026, +6.8% a year</title></line>
+<line class="tide-up" x1="640.3" x2="640.3" y1="46" y2="43.3"><title>28 Aug 2026, +2.0% a year</title></line>
+<line class="tide-up" x1="642.3" x2="642.3" y1="46" y2="40.6"><title>29 Aug 2026, +4.0% a year</title></line>
+<line class="tide-up" x1="644.3" x2="644.3" y1="46" y2="31.5"><title>30 Aug 2026, +10.9% a year</title></line>
+<line class="tide-up" x1="646.2" x2="646.2" y1="46" y2="31.3"><title>31 Aug 2026, +11.0% a year</title></line>
+<line class="tide-up" x1="648.2" x2="648.2" y1="46" y2="33.7"><title>1 Sep 2026, +9.2% a year</title></line>
+<line class="tide-up" x1="650.2" x2="650.2" y1="46" y2="37.1"><title>2 Sep 2026, +6.7% a year</title></line>
+<line class="tide-up" x1="652.1" x2="652.1" y1="46" y2="41.9"><title>3 Sep 2026, +3.0% a year</title></line>
+<line class="tide-dn" x1="654.1" x2="654.1" y1="46" y2="48.6"><title>4 Sep 2026, &#8722;1.9% a year</title></line>
+<line class="tide-up" x1="656.1" x2="656.1" y1="46" y2="44.3"><title>5 Sep 2026, +1.3% a year</title></line>
+<line class="tide-up" x1="658.0" x2="658.0" y1="46" y2="33.0"><title>6 Sep 2026, +9.7% a year</title></line>
+<line class="tide-up" x1="660.0" x2="660.0" y1="46" y2="39.0"><title>7 Sep 2026, +5.2% a year</title></line>
+<line class="tide-up" x1="662.0" x2="662.0" y1="46" y2="35.3"><title>8 Sep 2026, +8.0% a year</title></line>
+<line class="tide-up" x1="663.9" x2="663.9" y1="46" y2="30.4"><title>9 Sep 2026, +11.7% a year</title></line>
+<line class="tide-up" x1="665.9" x2="665.9" y1="46" y2="29.7"><title>10 Sep 2026, +12.2% a year</title></line>
+<line class="tide-up" x1="667.9" x2="667.9" y1="46" y2="43.5"><title>11 Sep 2026, +1.9% a year</title></line>
+<line class="tide-up" x1="669.8" x2="669.8" y1="46" y2="44.1"><title>12 Sep 2026, +1.4% a year</title></line>
+<line class="tide-up" x1="671.8" x2="671.8" y1="46" y2="34.0"><title>13 Sep 2026, +9.0% a year</title></line>
+<line class="tide-up" x1="673.8" x2="673.8" y1="46" y2="39.2"><title>14 Sep 2026, +5.1% a year</title></line>
+<line class="tide-up" x1="675.7" x2="675.7" y1="46" y2="34.2"><title>15 Sep 2026, +8.8% a year</title></line>
+<line class="tide-up" x1="677.7" x2="677.7" y1="46" y2="23.3"><title>16 Sep 2026, +17.0% a year</title></line>
+<line class="tide-up" x1="679.7" x2="679.7" y1="46" y2="32.0"><title>17 Sep 2026, +10.5% a year</title></line>
+<line class="tide-up" x1="681.6" x2="681.6" y1="46" y2="40.4"><title>18 Sep 2026, +4.2% a year</title></line>
+<line class="tide-up" x1="683.6" x2="683.6" y1="46" y2="37.5"><title>19 Sep 2026, +6.3% a year</title></line>
+<line class="tide-up" x1="685.6" x2="685.6" y1="46" y2="36.6"><title>20 Sep 2026, +7.0% a year</title></line>
+<line class="tide-up" x1="687.5" x2="687.5" y1="46" y2="35.2"><title>21 Sep 2026, +8.1% a year</title></line>
+<line class="tide-up" x1="689.5" x2="689.5" y1="46" y2="41.7"><title>22 Sep 2026, +3.2% a year</title></line>
+<line class="tide-up" x1="691.5" x2="691.5" y1="46" y2="37.8"><title>23 Sep 2026, +6.2% a year</title></line>
+<line class="tide-up" x1="693.4" x2="693.4" y1="46" y2="40.2"><title>24 Sep 2026, +4.3% a year</title></line>
+<line class="tide-dn" x1="695.4" x2="695.4" y1="46" y2="46.1"><title>25 Sep 2026, &#8722;0.1% a year</title></line>
+<line class="tide-dn" x1="697.4" x2="697.4" y1="46" y2="49.1"><title>26 Sep 2026, &#8722;2.4% a year</title></line>
+<line class="tide-up" x1="699.3" x2="699.3" y1="46" y2="41.9"><title>27 Sep 2026, +3.0% a year</title></line>
+<line class="tide-up" x1="701.3" x2="701.3" y1="46" y2="36.6"><title>28 Sep 2026, +7.1% a year</title></line>
+<line class="tide-up" x1="703.3" x2="703.3" y1="46" y2="36.5"><title>29 Sep 2026, +7.1% a year</title></line>
+<line class="tide-up" x1="705.2" x2="705.2" y1="46" y2="36.4"><title>30 Sep 2026, +7.2% a year</title></line>
+<line class="tide-up" x1="707.2" x2="707.2" y1="46" y2="35.0"><title>1 Oct 2026, +8.3% a year</title></line>
+<line class="tide-up" x1="709.2" x2="709.2" y1="46" y2="40.9"><title>2 Oct 2026, +3.8% a year</title></line>
+<line class="tide-dn" x1="711.1" x2="711.1" y1="46" y2="52.2"><title>3 Oct 2026, &#8722;4.7% a year</title></line>
+<line class="tide-up" x1="713.1" x2="713.1" y1="46" y2="39.2"><title>4 Oct 2026, +5.1% a year</title></line>
+<line class="tide-up" x1="715.1" x2="715.1" y1="46" y2="41.7"><title>5 Oct 2026, +3.2% a year</title></line>
+<line class="tide-up" x1="717.0" x2="717.0" y1="46" y2="35.1"><title>6 Oct 2026, +8.2% a year</title></line>
+<line class="tide-up" x1="719.0" x2="719.0" y1="46" y2="36.2"><title>7 Oct 2026, +7.3% a year</title></line>
+</svg>
+<!--/tide-->
+<figcaption>A year of bitcoin funding on the first exchange, one tick a day from October 2025. Above the line shorts
+were paid, below it they paid. Point at a tick for its rate.</figcaption>
+</figure>
+
+<p class="stand"><span class="big">The same perpetual contract can charge longs 40 percent a year on one
+exchange and 5 percent on another. A trade that is short where funding is high and long where it is low
+collects the difference, while the two price moves cancel.</span></p>
+
+<p class="stand">This report measures that difference between three large exchanges, called here the first, second and
+third, over five years, with every variant written down before it ran. The spread is real and wide, and it is wide exactly where
+almost nobody trades. Coins that change hands for less than 250 thousand dollars a day on the first exchange produced
+92 percent of the profit of the best version, and once a modest liquidity floor is imposed the trade loses
+money. What survives is older and simpler. Holding bitcoin and ether while shorting their perpetuals
+earned 6.9 percent a year after the first exchange's fees in 2024 to 2026, with a deepest drawdown under one percent.
+It earns what the market's appetite for leverage pays, which was 34 percent in 2021 and about 2 percent so
+far in 2026.</p>
+
+<div class="tides">
+  <div class="th"><span>Tide table of results</span><span>verdict</span></div>
+  <div class="row"><div class="q">Does funding differ between venues</div>
+    <div class="a">Yes. The typical spread between the first and second exchanges is 12.5 percent a year, and one coin-day in
+    ten exceeds 71 percent.</div><span class="chip hi">wide</span></div>
+  <div class="row"><div class="q">Can the next day's spread be predicted</div>
+    <div class="a">Partly. The trailing day explains 16 percent of the next one, and a sign lasts about two
+    days.</div><span class="chip mid">weak</span></div>
+  <div class="row"><div class="q">Where does the profit come from</div>
+    <div class="a">From coins trading under $250k a day on the first exchange, 92 percent of it. Coins over $1M a day
+    earned 1 percent.</div><span class="chip lo">thin</span></div>
+  <div class="row"><div class="q">First against second exchange, $1M floor</div>
+    <div class="a">−2.3 percent a year in the held-out half. The registered pass rule fails.</div>
+    <span class="chip lo">fails</span></div>
+  <div class="row"><div class="q">Third against second exchange</div>
+    <div class="a">Robust and small, about 1.2 percent a year at every floor.</div>
+    <span class="chip mid">small</span></div>
+  <div class="row"><div class="q">Cash and carry on BTC and ETH</div>
+    <div class="a">+6.9 percent a year in 2024 to 2026 after the first exchange's fees, <i>t</i> 9.8, and positive
+    over the first exchange's own year.</div><span class="chip ok">holds</span></div>
+</div>
+
+<section class="part">
+<span class="num">Part one</span>
+<h2>Why the fast version is closed, and the slow one is not</h2>
+
+<p class="lede">Buying a coin on one exchange and selling it on another when their prices differ is the
+first trade most people think of, and it is one of the most thoroughly competed in all of finance. A first
+attempt at it in this project stopped at the speed of a public interface, which is exactly where the
+literature says it should stop.</p>
+
+<p>When the same asset trades in two places, the gap between the prices is usually a few basis points and
+lives for milliseconds. Budish, Cramton and Shim show for equity futures that such gaps are taken by
+whoever is fastest, so competition becomes a race for speed rather than a contest of ideas.<sup>1</sup>
+Foucault, Kozhan and Tham find the same in currency markets, where most triangular arbitrage
+opportunities vanish within a second.<sup>2</sup> Crypto had large and lasting gaps in 2017 and 2018, but
+Makarov and Schoar trace the large ones to capital controls between countries,<sup>3</sup> and within
+open markets they shrank sharply after 2018.<sup>4</sup></p>
+
+<p>Funding is different in kind. A perpetual future has no expiry, so the exchange keeps its price near
+the coin's by making one side pay the other a small fee every hour or every eight hours. When leveraged
+longs crowd in, the perpetual trades at a premium and longs pay shorts. He, Manela, Ross and von Wachter
+treat that fee as the price of leverage demand,<sup>5</sup> which ties it to the broader observation of
+Brunnermeier and Pedersen that what leverage costs depends on who is asking for it.<sup>6</sup> Each
+exchange has its own crowd, so each has its own price of leverage. A difference paid over hours and days
+is a contest of patience, and speed buys very little in it.</p>
+
+<figure>
+<!--fig1-->
+<svg viewBox="0 0 720 392" class="fig" role="img" aria-label="Diagram of the funding spread trade. Venue X has funding of 40 percent a year and the trade is short there, venue Y has 5 percent and the trade is long there, in the same coin at the same size. Below, a year of the trade per unit held. Funding received adds 40 percent, funding paid takes 5, the price legs nearly cancel, and costs of entering and leaving every week take about 19, leaving about 16.">
+<rect class="dg-box" x="24" y="16" width="256" height="128" rx="8"/><rect class="dg-band dg-short-band" x="24" y="16" width="5" height="128" rx="2"/><text class="dg-leg dg-c" x="46" y="40">VENUE X</text><text class="dg-t" x="46" y="58">crowded with leveraged longs</text><text class="dg-big" x="46" y="98">+40%</text><text class="dg-t" x="144" y="90">funding a year,</text><text class="dg-t" x="144" y="106">paid by longs to shorts</text><text class="dg-leg dg-short" x="46" y="130">SHORT the perpetual, receives it</text>
+<rect class="dg-box" x="440" y="16" width="256" height="128" rx="8"/><rect class="dg-band dg-long-band" x="440" y="16" width="5" height="128" rx="2"/><text class="dg-leg dg-c" x="462" y="40">VENUE Y</text><text class="dg-t" x="462" y="58">fewer leveraged longs</text><text class="dg-big" x="462" y="98">+5%</text><text class="dg-t" x="560" y="90">funding a year,</text><text class="dg-t" x="560" y="106">paid by longs to shorts</text><text class="dg-leg dg-long" x="462" y="130">LONG the perpetual, pays it</text>
+<line class="dg-cross" x1="280" x2="440" y1="80" y2="80"/><rect class="dg-pill" x="288" y="66" width="144" height="28" rx="14"/><text class="dg-t" x="360" y="84.5" text-anchor="middle">same coin, same size</text><text class="dg-t dg-c" x="360" y="114" text-anchor="middle">price moves nearly cancel</text>
+<text class="dg-leg dg-c" x="24" y="172">A YEAR OF THE TRADE, PER UNIT HELD ON EACH LEG</text>
+<line class="grid" x1="268.0" x2="268.0" y1="184" y2="360"/><text class="tick" x="268.0" y="376" text-anchor="middle">0%</text>
+<line class="grid" x1="356.9" x2="356.9" y1="184" y2="360"/><text class="tick" x="356.9" y="376" text-anchor="middle">10%</text>
+<line class="grid" x1="445.8" x2="445.8" y1="184" y2="360"/><text class="tick" x="445.8" y="376" text-anchor="middle">20%</text>
+<line class="grid" x1="534.7" x2="534.7" y1="184" y2="360"/><text class="tick" x="534.7" y="376" text-anchor="middle">30%</text>
+<line class="grid" x1="623.6" x2="623.6" y1="184" y2="360"/><text class="tick" x="623.6" y="376" text-anchor="middle">40%</text>
+<text class="lab" x="254" y="206" text-anchor="end">Funding received on X</text>
+<rect class="wf-pos" x="268.0" y="193" width="355.6" height="18" rx="2"/>
+<line class="wf-link" x1="623.6" x2="623.6" y1="211" y2="227"/>
+<text class="pt" x="631.6" y="206">+40%</text>
+<text class="lab" x="254" y="240" text-anchor="end">Funding paid on Y</text>
+<rect class="wf-neg" x="579.1" y="227" width="44.4" height="18" rx="2"/>
+<line class="wf-link" x1="579.1" x2="579.1" y1="245" y2="261"/>
+<text class="pt" x="631.6" y="240">&#8722;5%</text>
+<text class="lab" x="254" y="274" text-anchor="end">Price, short X and long Y</text>
+<line class="wf-tick" x1="579.1" x2="579.1" y1="260" y2="280"/>
+<line class="wf-link" x1="579.1" x2="579.1" y1="279" y2="295"/>
+<text class="pt" x="587.1" y="274">about 0</text>
+<text class="lab" x="254" y="308" text-anchor="end">Costs, four orders a week</text>
+<rect class="wf-neg" x="412.9" y="295" width="166.2" height="18" rx="2"/>
+<line class="wf-link" x1="412.9" x2="412.9" y1="313" y2="329"/>
+<text class="pt" x="587.1" y="308">&#8722;19%</text>
+<text class="lab-strong" x="254" y="342" text-anchor="end">What is left</text>
+<rect class="wf-net" x="268.0" y="329" width="144.9" height="18" rx="2"/>
+<text class="pt" x="420.9" y="342">about +16%</text>
+</svg>
+<!--/fig1-->
+<figcaption><b>Figure 1.</b> The funding spread trade. Venue X has more leveraged longs than venue Y, so its
+perpetual pays shorts more. A short there and a long of the same size in the same coin's perpetual on venue
+Y leave almost no exposure to the coin's price and collect the gap. Below, a year of it per unit held on
+each leg, with illustrative rates. Entering and leaving every week costs four orders of about 0.09 percent
+each, which takes about 19 points a year, more than half of the gap.</figcaption>
+</figure>
+</section>
+
+<section class="part">
+<span class="num">Part two</span>
+<h2>The spread is real, and it lives where nobody trades</h2>
+
+<p class="lede">Over a year of hourly funding on 141 coins listed on both the first and second exchanges, the typical
+absolute spread is 12.5 percent a year. One coin-day in ten it is above 71 percent. On 21.5 percent of
+coin-days it is wide enough to pay for entering and leaving within a week.</p>
+
+<p>That sounds like an open door. Two measurements say otherwise before any trade is simulated. The
+spread barely persists, since a sign lasts a median of two days, and the trailing day's spread explains
+only 16 percent of the next day's, with a slope of 0.41. Much of what a trader would see on the screen is
+already over by the time it is paid. And where the spread is wide, there is very little market to trade
+against.</p>
+
+<figure>
+<!--fig2-->
+<svg viewBox="0 0 720 500" class="fig" role="img" aria-label="Scatter of 140 coins. Each coin's typical funding spread between the first and second exchanges against its daily dollar volume on the first. The widest spreads and almost all the profit sit in coins trading under 250 thousand dollars a day.">
+<text class="colhead" x="60" y="16">Share of the arm's profit, by daily volume on the first exchange</text><rect class="band" x="412.1" y="112" width="287.9" height="288"/>
+<text class="share" x="165.2" y="44" text-anchor="middle">53%</text><text class="tick" x="165.2" y="60" text-anchor="middle">under $50k</text><path class="bracket" d="M60.0 66 V71 H270.3 V66"/>
+<text class="share" x="310.6" y="44" text-anchor="middle">39%</text><text class="tick" x="310.6" y="60" text-anchor="middle">$50k–250k</text><path class="bracket" d="M276.3 66 V71 H344.9 V66"/>
+<line class="div" x1="273.3" x2="273.3" y1="74" y2="400"/>
+<text class="share" x="380.0" y="44" text-anchor="middle">7%</text><text class="tick" x="380.0" y="60" text-anchor="middle">$250k–1M</text><path class="bracket" d="M350.9 66 V71 H409.1 V66"/>
+<line class="div" x1="347.9" x2="347.9" y1="74" y2="400"/>
+<text class="share" x="557.6" y="44" text-anchor="middle">1%</text><text class="tick" x="557.6" y="60" text-anchor="middle">over $1M</text><path class="bracket" d="M415.1 66 V71 H700.0 V66"/>
+<line class="cut" x1="412.1" x2="412.1" y1="74" y2="400"/>
+<line class="axis" x1="60" x2="700" y1="400.0" y2="400.0"/><text class="tick" x="52" y="404.0" text-anchor="end">0%</text>
+<line class="grid" x1="60" x2="700" y1="328.0" y2="328.0"/><text class="tick" x="52" y="332.0" text-anchor="end">40%</text>
+<line class="grid" x1="60" x2="700" y1="256.0" y2="256.0"/><text class="tick" x="52" y="260.0" text-anchor="end">80%</text>
+<line class="grid" x1="60" x2="700" y1="184.0" y2="184.0"/><text class="tick" x="52" y="188.0" text-anchor="end">120%</text>
+<line class="grid" x1="60" x2="700" y1="112.0" y2="112.0"/><text class="tick" x="52" y="116.0" text-anchor="end">160%+</text>
+<line class="axis" x1="92.1" x2="92.1" y1="400" y2="405"/><text class="tick" x="92.1" y="419" text-anchor="middle">$1k</text>
+<line class="axis" x1="198.8" x2="198.8" y1="400" y2="405"/><text class="tick" x="198.8" y="419" text-anchor="middle">$10k</text>
+<line class="axis" x1="305.4" x2="305.4" y1="400" y2="405"/><text class="tick" x="305.4" y="419" text-anchor="middle">$100k</text>
+<line class="axis" x1="412.1" x2="412.1" y1="400" y2="405"/><text class="tick" x="412.1" y="419" text-anchor="middle">$1M</text>
+<line class="axis" x1="518.8" x2="518.8" y1="400" y2="405"/><text class="tick" x="518.8" y="419" text-anchor="middle">$10M</text>
+<line class="axis" x1="625.4" x2="625.4" y1="400" y2="405"/><text class="tick" x="625.4" y="419" text-anchor="middle">$100M</text>
+<text class="axlab" x="16" y="96">Typical funding spread, a year</text><text class="axlab" x="700" y="440" text-anchor="end">Median daily dollar volume on the first exchange, log scale</text>
+<circle class="dot-idle" cx="421.1" cy="391.4" r="2.6"><title>AAVE, spread 4.8% a year, $1,214,472 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="505.6" cy="391.1" r="2.6"><title>ADA, spread 4.9% a year, $7,531,272 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="364.5" cy="377.8" r="2.6"><title>ALGO, spread 12.3% a year, $357,625 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="335.5" cy="375.3" r="2.6"><title>APE, spread 13.7% a year, $191,431 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="405.4" cy="385.4" r="2.6"><title>ARB, spread 8.1% a year, $864,497 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="365.4" cy="378.9" r="2.6"><title>ATOM, spread 11.7% a year, $365,089 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="464.9" cy="391.6" r="2.6"><title>AVAX, spread 4.6% a year, $3,123,839 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="406.7" cy="384.9" r="2.6"><title>BCH, spread 8.4% a year, $889,463 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="442.6" cy="389.6" r="2.6"><title>BNB, spread 5.8% a year, $1,929,432 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="682.6" cy="395.0" r="2.6"><title>BTC, spread 2.8% a year, $343,567,846 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="427.2" cy="378.7" r="2.6"><title>CRV, spread 11.8% a year, $1,385,847 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="504.1" cy="393.4" r="2.6"><title>DOGE, spread 3.7% a year, $7,281,810 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="424.5" cy="386.6" r="2.6"><title>DOT, spread 7.4% a year, $1,307,620 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="280.2" cy="364.9" r="2.6"><title>EGLD, spread 19.5% a year, $57,998 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="389.4" cy="383.1" r="2.6"><title>ENA, spread 9.4% a year, $612,355 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="312.1" cy="370.9" r="2.6"><title>ETC, spread 16.2% a year, $115,403 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="636.7" cy="394.8" r="2.6"><title>ETH, spread 2.9% a year, $127,525,002 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="475.9" cy="383.8" r="2.6"><title>HYPE, spread 9.0% a year, $3,965,691 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="335.5" cy="382.9" r="2.6"><title>LDO, spread 9.5% a year, $191,261 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="457.7" cy="390.8" r="2.6"><title>LINK, spread 5.1% a year, $2,672,861 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="422.8" cy="390.5" r="2.6"><title>LTC, spread 5.3% a year, $1,260,422 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="461.1" cy="382.6" r="2.6"><title>NEAR, spread 9.6% a year, $2,881,118 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="339.4" cy="383.5" r="2.6"><title>OP, spread 9.2% a year, $208,113 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="447.6" cy="387.6" r="2.6"><title>PEPE, spread 6.9% a year, $2,152,441 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="354.6" cy="381.3" r="2.6"><title>POL, spread 10.4% a year, $289,050 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="591.4" cy="391.0" r="2.6"><title>SOL, spread 5.0% a year, $47,971,626 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="498.3" cy="390.0" r="2.6"><title>SUI, spread 5.5% a year, $6,428,684 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="470.4" cy="387.0" r="2.6"><title>TAO, spread 7.2% a year, $3,518,058 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="373.4" cy="390.3" r="2.6"><title>TRX, spread 5.4% a year, $434,040 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="430.5" cy="384.6" r="2.6"><title>UNI, spread 8.5% a year, $1,486,469 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="355.1" cy="378.2" r="2.6"><title>VIRTUAL, spread 12.1% a year, $292,343 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="387.3" cy="383.6" r="2.6"><title>WLD, spread 9.1% a year, $584,888 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="424.8" cy="387.4" r="2.6"><title>XLM, spread 7.0% a year, $1,314,388 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="423.2" cy="382.4" r="2.6"><title>XMR, spread 9.8% a year, $1,270,960 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="554.3" cy="393.2" r="2.6"><title>XRP, spread 3.8% a year, $21,549,838 a day on the first exchange, never held</title></circle>
+<circle class="dot-idle" cx="321.7" cy="364.1" r="2.6"><title>XTZ, spread 19.9% a year, $141,916 a day on the first exchange, never held</title></circle>
+<circle class="dot-lost" cx="374.7" cy="382.2" r="3.2"><title>ICP, spread 9.9% a year, $446,053 a day on the first exchange, held 4 days, &#8722;0.01% of the book</title></circle>
+<circle class="dot-lost" cx="280.7" cy="350.5" r="3.2"><title>SNX, spread 27.5% a year, $58,560 a day on the first exchange, held 37 days, &#8722;0.01% of the book</title></circle>
+<circle class="dot-lost" cx="358.8" cy="374.8" r="3.2"><title>RENDER, spread 14.0% a year, $316,395 a day on the first exchange, held 7 days, &#8722;0.01% of the book</title></circle>
+<circle class="dot-lost" cx="341.0" cy="379.6" r="3.2"><title>SEI, spread 11.3% a year, $215,508 a day on the first exchange, held 7 days, &#8722;0.01% of the book</title></circle>
+<circle class="dot-lost" cx="366.4" cy="386.8" r="3.2"><title>SHIB, spread 7.4% a year, $373,100 a day on the first exchange, held 2 days, &#8722;0.01% of the book</title></circle>
+<circle class="dot-lost" cx="268.7" cy="342.7" r="3.2"><title>PNUT, spread 31.9% a year, $45,286 a day on the first exchange, held 44 days, &#8722;0.01% of the book</title></circle>
+<circle class="dot-lost" cx="395.7" cy="382.4" r="3.2"><title>FIL, spread 9.8% a year, $702,038 a day on the first exchange, held 5 days, &#8722;0.02% of the book</title></circle>
+<circle class="dot-lost" cx="428.7" cy="380.3" r="3.2"><title>WIF, spread 11.0% a year, $1,431,597 a day on the first exchange, held 5 days, &#8722;0.02% of the book</title></circle>
+<circle class="dot-lost" cx="390.3" cy="376.5" r="3.2"><title>INJ, spread 13.1% a year, $624,010 a day on the first exchange, held 11 days, &#8722;0.02% of the book</title></circle>
+<circle class="dot-lost" cx="284.7" cy="354.6" r="3.2"><title>ENS, spread 25.2% a year, $63,845 a day on the first exchange, held 33 days, &#8722;0.02% of the book</title></circle>
+<circle class="dot-lost" cx="68.8" cy="212.5" r="3.2"><title>LQTY, spread 104.2% a year, $604 a day on the first exchange, held 13 days, &#8722;0.03% of the book</title></circle>
+<circle class="dot-lost" cx="368.4" cy="386.0" r="3.2"><title>PENGU, spread 7.8% a year, $388,825 a day on the first exchange, held 3 days, &#8722;0.03% of the book</title></circle>
+<circle class="dot-lost" cx="359.8" cy="383.1" r="3.2"><title>APT, spread 9.4% a year, $323,314 a day on the first exchange, held 9 days, &#8722;0.05% of the book</title></circle>
+<circle class="dot-lost" cx="285.2" cy="356.5" r="3.2"><title>COMP, spread 24.2% a year, $64,662 a day on the first exchange, held 12 days, &#8722;0.05% of the book</title></circle>
+<circle class="dot-lost" cx="152.5" cy="196.3" r="3.2"><title>MOVR, spread 113.2% a year, $3,680 a day on the first exchange, held 42 days, &#8722;0.05% of the book</title></circle>
+<circle class="dot-lost" cx="286.8" cy="359.7" r="3.2"><title>PENDLE, spread 22.4% a year, $66,921 a day on the first exchange, held 29 days, &#8722;0.07% of the book</title></circle>
+<circle class="dot-lost" cx="169.1" cy="245.4" r="3.2"><title>BIO, spread 85.9% a year, $5,273 a day on the first exchange, held 44 days, &#8722;0.08% of the book</title></circle>
+<circle class="dot-lost" cx="247.2" cy="350.2" r="3.2"><title>EIGEN, spread 27.7% a year, $28,465 a day on the first exchange, held 14 days, &#8722;0.11% of the book</title></circle>
+<circle class="dot-lost" cx="136.0" cy="305.1" r="3.2"><title>SSV, spread 52.7% a year, $2,579 a day on the first exchange, held 11 days, &#8722;0.11% of the book</title></circle>
+<circle class="dot-lost" cx="128.6" cy="281.9" r="3.2"><title>PEOPLE, spread 65.6% a year, $2,200 a day on the first exchange, held 13 days, &#8722;0.14% of the book</title></circle>
+<circle class="dot-lost" cx="140.9" cy="153.6" r="3.2"><title>GPS, spread 136.9% a year, $2,866 a day on the first exchange, held 35 days, &#8722;0.19% of the book</title></circle>
+<circle class="dot-lost" cx="170.1" cy="205.2" r="3.2"><title>OPN, spread 108.2% a year, $5,390 a day on the first exchange, held 28 days, &#8722;0.26% of the book</title></circle>
+<circle class="dot-lost" cx="190.1" cy="302.3" r="3.2"><title>YFI, spread 54.3% a year, $8,287 a day on the first exchange, held 36 days, &#8722;0.30% of the book</title></circle>
+<circle class="dot-lost" cx="128.4" cy="204.0" r="3.2"><title>PIXEL, spread 108.9% a year, $2,188 a day on the first exchange, held 31 days, &#8722;0.43% of the book</title></circle>
+<circle class="dot-earn" cx="259.4" cy="269.2" r="17.0"><title>DEXE, spread 72.6% a year, $36,997 a day on the first exchange, held 120 days, +3.37% of the book</title></circle>
+<circle class="dot-earn" cx="189.8" cy="112.0" r="15.6"><title>NEIRO, spread 315.8% a year, $8,246 a day on the first exchange, held 74 days, +2.85% of the book</title></circle>
+<circle class="dot-earn" cx="238.0" cy="309.4" r="12.8"><title>BOME, spread 50.4% a year, $23,343 a day on the first exchange, held 96 days, +1.92% of the book</title></circle>
+<circle class="dot-earn" cx="236.6" cy="271.5" r="12.2"><title>QNT, spread 71.4% a year, $22,642 a day on the first exchange, held 89 days, +1.73% of the book</title></circle>
+<circle class="dot-earn" cx="312.4" cy="349.7" r="11.1"><title>AXS, spread 28.0% a year, $116,291 a day on the first exchange, held 63 days, +1.44% of the book</title></circle>
+<circle class="dot-earn" cx="141.7" cy="222.2" r="11.0"><title>BICO, spread 98.8% a year, $2,919 a day on the first exchange, held 65 days, +1.41% of the book</title></circle>
+<circle class="dot-earn" cx="186.9" cy="142.6" r="10.5"><title>SYN, spread 143.0% a year, $7,732 a day on the first exchange, held 96 days, +1.29% of the book</title></circle>
+<circle class="dot-earn" cx="176.7" cy="196.5" r="10.5"><title>FLOW, spread 113.0% a year, $6,214 a day on the first exchange, held 50 days, +1.28% of the book</title></circle>
+<circle class="dot-earn" cx="153.9" cy="112.0" r="10.5"><title>USUAL, spread 214.8% a year, $3,792 a day on the first exchange, held 31 days, +1.28% of the book</title></circle>
+<circle class="dot-earn" cx="98.9" cy="137.5" r="10.3"><title>AGLD, spread 145.9% a year, $1,159 a day on the first exchange, held 25 days, +1.24% of the book</title></circle>
+<circle class="dot-earn" cx="106.6" cy="173.5" r="10.2"><title>ZBT, spread 125.8% a year, $1,367 a day on the first exchange, held 30 days, +1.22% of the book</title></circle>
+<circle class="dot-earn" cx="89.2" cy="239.6" r="10.2"><title>OPEN, spread 89.1% a year, $938 a day on the first exchange, held 19 days, +1.21% of the book</title></circle>
+<circle class="dot-earn" cx="119.3" cy="259.3" r="9.9"><title>MUBARAK, spread 78.2% a year, $1,797 a day on the first exchange, held 59 days, +1.13% of the book</title></circle>
+<circle class="dot-earn" cx="156.9" cy="150.4" r="9.6"><title>SUPER, spread 138.7% a year, $4,047 a day on the first exchange, held 33 days, +1.07% of the book</title></circle>
+<circle class="dot-earn" cx="220.2" cy="309.1" r="9.5"><title>KAITO, spread 50.5% a year, $15,884 a day on the first exchange, held 73 days, +1.05% of the book</title></circle>
+<circle class="dot-earn" cx="169.3" cy="247.0" r="9.5"><title>CVX, spread 85.0% a year, $5,291 a day on the first exchange, held 44 days, +1.05% of the book</title></circle>
+<circle class="dot-earn" cx="163.8" cy="273.6" r="8.8"><title>CTSI, spread 70.2% a year, $4,700 a day on the first exchange, held 49 days, +0.91% of the book</title></circle>
+<circle class="dot-earn" cx="130.3" cy="112.0" r="8.8"><title>SYRUP, spread 241.6% a year, $2,282 a day on the first exchange, held 44 days, +0.89% of the book</title></circle>
+<circle class="dot-earn" cx="184.1" cy="217.2" r="8.3"><title>KAVA, spread 101.5% a year, $7,283 a day on the first exchange, held 50 days, +0.81% of the book</title></circle>
+<circle class="dot-earn" cx="132.4" cy="250.6" r="8.2"><title>ONT, spread 83.0% a year, $2,386 a day on the first exchange, held 30 days, +0.78% of the book</title></circle>
+<circle class="dot-earn" cx="180.3" cy="190.7" r="8.1"><title>RSR, spread 116.3% a year, $6,715 a day on the first exchange, held 34 days, +0.76% of the book</title></circle>
+<circle class="dot-earn" cx="152.2" cy="280.9" r="8.0"><title>PORTAL, spread 66.2% a year, $3,663 a day on the first exchange, held 49 days, +0.75% of the book</title></circle>
+<circle class="dot-earn" cx="135.3" cy="233.6" r="7.7"><title>SPK, spread 92.5% a year, $2,541 a day on the first exchange, held 40 days, +0.68% of the book</title></circle>
+<circle class="dot-earn" cx="246.4" cy="346.7" r="7.5"><title>XPL, spread 29.6% a year, $27,936 a day on the first exchange, held 32 days, +0.66% of the book</title></circle>
+<circle class="dot-earn" cx="261.7" cy="333.8" r="7.5"><title>ZK, spread 36.8% a year, $38,914 a day on the first exchange, held 56 days, +0.65% of the book</title></circle>
+<circle class="dot-earn" cx="274.8" cy="324.9" r="7.2"><title>TURBO, spread 41.7% a year, $51,657 a day on the first exchange, held 86 days, +0.61% of the book</title></circle>
+<circle class="dot-earn" cx="155.9" cy="112.0" r="7.0"><title>BB, spread 221.6% a year, $3,960 a day on the first exchange, held 27 days, +0.58% of the book</title></circle>
+<circle class="dot-earn" cx="249.5" cy="357.4" r="6.8"><title>GRT, spread 23.7% a year, $29,909 a day on the first exchange, held 70 days, +0.54% of the book</title></circle>
+<circle class="dot-earn" cx="166.7" cy="258.8" r="6.5"><title>ACE, spread 78.5% a year, $5,007 a day on the first exchange, held 70 days, +0.49% of the book</title></circle>
+<circle class="dot-earn" cx="420.9" cy="375.8" r="6.4"><title>DASH, spread 13.4% a year, $1,207,967 a day on the first exchange, held 41 days, +0.48% of the book</title></circle>
+<circle class="dot-earn" cx="133.3" cy="262.9" r="6.4"><title>C98, spread 76.1% a year, $2,434 a day on the first exchange, held 28 days, +0.47% of the book</title></circle>
+<circle class="dot-earn" cx="93.4" cy="112.0" r="6.1"><title>CATI, spread 203.0% a year, $1,028 a day on the first exchange, held 19 days, +0.44% of the book</title></circle>
+<circle class="dot-earn" cx="292.0" cy="371.9" r="5.9"><title>STX, spread 15.6% a year, $74,741 a day on the first exchange, held 56 days, +0.41% of the book</title></circle>
+<circle class="dot-earn" cx="292.4" cy="354.5" r="5.9"><title>MANA, spread 25.3% a year, $75,422 a day on the first exchange, held 58 days, +0.40% of the book</title></circle>
+<circle class="dot-earn" cx="206.3" cy="328.9" r="5.8"><title>BAT, spread 39.5% a year, $11,756 a day on the first exchange, held 41 days, +0.39% of the book</title></circle>
+<circle class="dot-earn" cx="167.6" cy="112.0" r="5.6"><title>CFG, spread 177.9% a year, $5,100 a day on the first exchange, held 34 days, +0.36% of the book</title></circle>
+<circle class="dot-earn" cx="196.9" cy="302.4" r="5.5"><title>CFX, spread 54.2% a year, $9,602 a day on the first exchange, held 46 days, +0.35% of the book</title></circle>
+<circle class="dot-earn" cx="140.4" cy="208.4" r="5.5"><title>ROSE, spread 106.4% a year, $2,837 a day on the first exchange, held 35 days, +0.35% of the book</title></circle>
+<circle class="dot-earn" cx="274.0" cy="292.3" r="5.2"><title>NIGHT, spread 59.8% a year, $50,724 a day on the first exchange, held 88 days, +0.31% of the book</title></circle>
+<circle class="dot-earn" cx="262.4" cy="354.1" r="5.1"><title>W, spread 25.5% a year, $39,525 a day on the first exchange, held 66 days, +0.31% of the book</title></circle>
+<circle class="dot-earn" cx="319.0" cy="358.6" r="4.6"><title>ZRO, spread 23.0% a year, $134,088 a day on the first exchange, held 33 days, +0.25% of the book</title></circle>
+<circle class="dot-earn" cx="95.2" cy="308.1" r="4.4"><title>KAIA, spread 51.1% a year, $1,070 a day on the first exchange, held 7 days, +0.22% of the book</title></circle>
+<circle class="dot-earn" cx="294.2" cy="361.7" r="4.3"><title>RUNE, spread 21.3% a year, $78,525 a day on the first exchange, held 48 days, +0.22% of the book</title></circle>
+<circle class="dot-earn" cx="173.4" cy="230.0" r="4.3"><title>CAKE, spread 94.4% a year, $5,787 a day on the first exchange, held 17 days, +0.22% of the book</title></circle>
+<circle class="dot-earn" cx="324.6" cy="370.7" r="4.2"><title>BONK, spread 16.3% a year, $151,100 a day on the first exchange, held 38 days, +0.21% of the book</title></circle>
+<circle class="dot-earn" cx="380.9" cy="369.5" r="4.2"><title>FET, spread 16.9% a year, $509,929 a day on the first exchange, held 48 days, +0.20% of the book</title></circle>
+<circle class="dot-earn" cx="309.9" cy="368.4" r="4.2"><title>STRK, spread 17.6% a year, $110,063 a day on the first exchange, held 49 days, +0.20% of the book</title></circle>
+<circle class="dot-earn" cx="114.9" cy="178.9" r="4.0"><title>IOTX, spread 122.9% a year, $1,634 a day on the first exchange, held 15 days, +0.19% of the book</title></circle>
+<circle class="dot-earn" cx="123.7" cy="250.8" r="4.0"><title>QTUM, spread 82.9% a year, $1,979 a day on the first exchange, held 24 days, +0.19% of the book</title></circle>
+<circle class="dot-earn" cx="283.9" cy="344.2" r="3.9"><title>LPT, spread 31.0% a year, $62,868 a day on the first exchange, held 63 days, +0.18% of the book</title></circle>
+<circle class="dot-earn" cx="315.2" cy="376.2" r="3.7"><title>DYDX, spread 13.2% a year, $123,363 a day on the first exchange, held 13 days, +0.16% of the book</title></circle>
+<circle class="dot-earn" cx="133.1" cy="242.1" r="3.6"><title>COOKIE, spread 87.7% a year, $2,424 a day on the first exchange, held 25 days, +0.15% of the book</title></circle>
+<circle class="dot-earn" cx="308.4" cy="374.8" r="3.6"><title>JUP, spread 14.0% a year, $106,574 a day on the first exchange, held 8 days, +0.15% of the book</title></circle>
+<circle class="dot-earn" cx="161.0" cy="279.9" r="3.3"><title>TRB, spread 66.7% a year, $4,426 a day on the first exchange, held 24 days, +0.13% of the book</title></circle>
+<circle class="dot-earn" cx="298.5" cy="374.9" r="3.0"><title>ASTER, spread 13.9% a year, $86,052 a day on the first exchange, held 15 days, +0.11% of the book</title></circle>
+<circle class="dot-earn" cx="194.2" cy="309.3" r="3.0"><title>IMX, spread 50.4% a year, $9,056 a day on the first exchange, held 104 days, +0.11% of the book</title></circle>
+<circle class="dot-earn" cx="253.6" cy="368.3" r="3.0"><title>FLOKI, spread 17.6% a year, $32,637 a day on the first exchange, held 17 days, +0.11% of the book</title></circle>
+<circle class="dot-earn" cx="259.2" cy="370.7" r="2.9"><title>SAND, spread 16.3% a year, $36,817 a day on the first exchange, held 15 days, +0.10% of the book</title></circle>
+<circle class="dot-earn" cx="289.8" cy="359.9" r="2.8"><title>ZEN, spread 22.3% a year, $71,324 a day on the first exchange, held 39 days, +0.09% of the book</title></circle>
+<circle class="dot-earn" cx="158.0" cy="133.7" r="2.6"><title>ALICE, spread 147.9% a year, $4,146 a day on the first exchange, held 38 days, +0.07% of the book</title></circle>
+<circle class="dot-earn" cx="356.7" cy="376.4" r="2.6"><title>PUMP, spread 13.1% a year, $302,318 a day on the first exchange, held 24 days, +0.06% of the book</title></circle>
+<circle class="dot-earn" cx="163.4" cy="278.0" r="2.6"><title>NOT, spread 67.8% a year, $4,656 a day on the first exchange, held 33 days, +0.06% of the book</title></circle>
+<circle class="dot-earn" cx="198.8" cy="206.3" r="2.6"><title>SAGA, spread 107.6% a year, $10,003 a day on the first exchange, held 65 days, +0.06% of the book</title></circle>
+<circle class="dot-earn" cx="117.2" cy="163.6" r="2.6"><title>TLM, spread 131.3% a year, $1,720 a day on the first exchange, held 60 days, +0.06% of the book</title></circle>
+<circle class="dot-earn" cx="253.5" cy="285.2" r="2.6"><title>MORPHO, spread 63.8% a year, $32,603 a day on the first exchange, held 49 days, +0.05% of the book</title></circle>
+<circle class="dot-earn" cx="315.6" cy="375.3" r="2.6"><title>SUSHI, spread 13.7% a year, $124,489 a day on the first exchange, held 10 days, +0.05% of the book</title></circle>
+<circle class="dot-earn" cx="184.3" cy="365.4" r="2.6"><title>1INCH, spread 19.2% a year, $7,313 a day on the first exchange, held 7 days, +0.05% of the book</title></circle>
+<circle class="dot-earn" cx="302.8" cy="370.5" r="2.6"><title>WLFI, spread 16.4% a year, $94,514 a day on the first exchange, held 27 days, +0.04% of the book</title></circle>
+<circle class="dot-earn" cx="307.8" cy="365.0" r="2.6"><title>CHZ, spread 19.5% a year, $105,317 a day on the first exchange, held 19 days, +0.04% of the book</title></circle>
+<circle class="dot-earn" cx="312.0" cy="377.6" r="2.6"><title>PYTH, spread 12.4% a year, $115,092 a day on the first exchange, held 15 days, +0.03% of the book</title></circle>
+<circle class="dot-earn" cx="344.6" cy="374.4" r="2.6"><title>JASMY, spread 14.2% a year, $232,752 a day on the first exchange, held 15 days, +0.02% of the book</title></circle>
+<circle class="dot-earn" cx="345.0" cy="375.6" r="2.6"><title>TIA, spread 13.5% a year, $235,082 a day on the first exchange, held 1 days, +0.02% of the book</title></circle>
+<circle class="dot-earn" cx="255.5" cy="350.1" r="2.6"><title>ETHFI, spread 27.7% a year, $33,998 a day on the first exchange, held 11 days, +0.02% of the book</title></circle>
+<circle class="dot-earn" cx="317.1" cy="373.3" r="2.6"><title>JTO, spread 14.8% a year, $128,735 a day on the first exchange, held 23 days, +0.01% of the book</title></circle>
+<circle class="dot-earn" cx="395.2" cy="373.0" r="2.6"><title>TRUMP, spread 15.0% a year, $693,786 a day on the first exchange, held 11 days, +0.01% of the book</title></circle>
+<circle class="dot-earn" cx="394.1" cy="382.3" r="2.6"><title>ONDO, spread 9.8% a year, $677,454 a day on the first exchange, held 6 days, +0.01% of the book</title></circle>
+<circle class="dot-earn" cx="295.7" cy="380.5" r="2.6"><title>ORDI, spread 10.8% a year, $81,053 a day on the first exchange, held 1 days, +0.01% of the book</title></circle>
+<circle class="dot-earn" cx="549.7" cy="377.7" r="2.6"><title>ZEC, spread 12.4% a year, $19,505,798 a day on the first exchange, held 17 days, +0.01% of the book</title></circle>
+<circle class="dot-earn" cx="372.6" cy="377.8" r="2.6"><title>GALA, spread 12.3% a year, $426,254 a day on the first exchange, held 4 days, 0.0% of the book</title></circle>
+<circle class="dot-earn" cx="383.4" cy="385.1" r="2.6"><title>HBAR, spread 8.3% a year, $538,132 a day on the first exchange, held 7 days, 0.0% of the book</title></circle>
+<text class="name" x="280.4" y="273.2">DEXE</text>
+<text class="name" x="209.5" y="116.0">NEIRO</text>
+<text class="name" x="254.9" y="313.4">BOME</text>
+<text class="note" x="16" y="482">Held and earned, area is profit</text><circle class="dot-earn" cx="228" cy="478" r="16.0"/><text class="note" x="249.0" y="482">3 points</text><circle class="dot-earn" cx="310" cy="478" r="9.3"/><text class="note" x="324.3" y="482">1 point</text><circle class="dot-lost" cx="400" cy="478" r="3.2"/><text class="note" x="410" y="482">held at a loss</text><circle class="dot-idle" cx="508" cy="478" r="2.6"/><text class="note" x="518" y="482">never held</text>
+</svg>
+<!--/fig2-->
+<figcaption><b>Figure 2.</b> Each dot is a coin listed on both venues. Its typical funding spread between
+the first and second exchanges is plotted against its median daily dollar volume on the first, on a log scale. Brass dots
+were held by the best taker arm, with area in proportion to the profit they earned. Red rings were held at a small loss, and grey dots
+were never held. The shaded
+area is above one million dollars a day. The figures across the top give each liquidity band's share of
+the arm's profit, 53, 39, 7 and 1 percent from left to right. Spreads above 160 percent are drawn at
+the top edge.</figcaption>
+</figure>
+
+<p>The pattern has a simple mechanism. The first exchange sets funding from the premium of its own perpetual over the
+index, and the premium of a contract that few people trade wanders, because almost nothing anchors it. A
+thin market prints extreme funding for the same reason it prints wide spreads. Shleifer and Vishny argued
+that arbitrage capital is scarcest precisely where mispricing is largest,<sup>7</sup> and Amihud showed
+that illiquidity is itself priced.<sup>8</sup> Here the two arguments meet in a single scatter plot. At a
+position of 1 percent of a day's volume, a coin trading 50 thousand dollars a day takes a 500 dollar
+leg.</p>
+
+<p class="pull">A wide funding spread on a thin contract is what a market looks like when almost no
+capital is there to close it.</p>
+</section>
+
+<section class="part">
+<span class="num">Part three</span>
+<h2>Where the carry goes</h2>
+
+<p class="lede">The arm registered before any data was read collected funding at 88 percent a year on what
+it held. It kept 13 of those 88 points.</p>
+
+<p>Signs that flip every two days force a portfolio ranked on them to turn over almost entirely every day,
+0.96 of its notional on average. Each turn crosses the bid and ask four times, two legs on two venues, so
+costs took 63 percent a year. The gap between the two perpetuals' prices took another 12 percent. What
+remained, 13.2 percent at a <i>t</i> statistic of 1.48, came entirely from the first half of the year, with
+26.1 percent before mid April and −0.7 percent after. The registered rule asks for a <i>t</i> above two
+and a positive second half, and the arm fails both.</p>
+
+<figure>
+<!--fig3-->
+<svg viewBox="0 0 720 268" class="fig" role="img" aria-label="Two bars, one per arm, each as long as the funding the arm collected in a year and split into what it kept, what trading costs took and what the gap between the two perpetuals' prices took.">
+<rect class="seg-kept" x="214" y="12" width="12" height="10" rx="2"/><text class="note" x="231" y="21">kept</text>
+<rect class="seg-cost" x="284" y="12" width="12" height="10" rx="2"/><text class="note" x="301" y="21">trading costs</text>
+<rect class="seg-loss" x="404" y="12" width="12" height="10" rx="2"/><text class="note" x="421" y="21">price gap between the legs</text>
+<line class="axis" x1="214.0" x2="214.0" y1="44" y2="224"/><text class="tick" x="214.0" y="240" text-anchor="middle">0%</text>
+<line class="grid" x1="310.4" x2="310.4" y1="44" y2="224"/><text class="tick" x="310.4" y="240" text-anchor="middle">20%</text>
+<line class="grid" x1="406.8" x2="406.8" y1="44" y2="224"/><text class="tick" x="406.8" y="240" text-anchor="middle">40%</text>
+<line class="grid" x1="503.2" x2="503.2" y1="44" y2="224"/><text class="tick" x="503.2" y="240" text-anchor="middle">60%</text>
+<line class="grid" x1="599.6" x2="599.6" y1="44" y2="224"/><text class="tick" x="599.6" y="240" text-anchor="middle">80%</text>
+<line class="grid" x1="696.0" x2="696.0" y1="44" y2="224"/><text class="tick" x="696.0" y="240" text-anchor="middle">100%</text>
+<text class="axlab" x="455.0" y="262" text-anchor="middle">a year, as a return on a book of at most one unit of notional on each leg</text>
+<text class="lab-strong" x="8" y="78">Registered arm</text><text class="note" x="8" y="95">3-day lookback, 10 slots, daily</text><text class="note" x="8" y="111">keeps 15% of the funding</text><text class="pt" x="640.5" y="70" text-anchor="end">funding collected +88.5%</text>
+<rect class="seg-kept" x="214.0" y="76" width="63.7" height="24"><title>kept +13.2%</title></rect>
+<text class="seg-in" x="245.9" y="92" text-anchor="middle">13.2%</text>
+<rect class="seg-cost" x="277.7" y="76" width="304.9" height="24"><title>trading costs &#8722;63.3%</title></rect>
+<text class="seg-in" x="430.2" y="92" text-anchor="middle">63.3%</text>
+<rect class="seg-loss" x="582.6" y="76" width="57.9" height="24"><title>price gap &#8722;12.0%</title></rect>
+<text class="seg-in" x="611.6" y="92" text-anchor="middle">12.0%</text>
+<text class="lab-strong" x="8" y="162">Best taker arm</text><text class="note" x="8" y="179">7-day lookback, 20 slots, daily</text><text class="note" x="8" y="195">keeps 41% of the funding</text><text class="pt" x="416.5" y="154" text-anchor="end">funding collected +42.0%</text>
+<rect class="seg-kept" x="214.0" y="160" width="83.9" height="24"><title>kept +17.4%</title></rect>
+<text class="seg-in" x="256.0" y="176" text-anchor="middle">17.4%</text>
+<rect class="seg-cost" x="297.9" y="160" width="107.3" height="24"><title>trading costs &#8722;22.3%</title></rect>
+<text class="seg-in" x="351.6" y="176" text-anchor="middle">22.3%</text>
+<rect class="seg-loss" x="405.2" y="160" width="11.3" height="24"><title>price gap &#8722;2.3%</title></rect>
+<text class="note" x="422.5" y="176">2.3%</text>
+</svg>
+<!--/fig3-->
+<figcaption><b>Figure 3.</b> The year in arena A for two arms. Each bar is as long as the funding the
+arm collected and is split into what it kept, what trading costs took and what the gap between the two
+perpetuals' prices took. The registered arm turns over 0.96 of its book a day, and costs take 63 of its 88
+points. A slower, more selective arm with 20 slots, about 10 of them filled at a time, keeps 17.4 percent
+at a Sharpe ratio of 4.0, and figure 2 shows where that came from.</figcaption>
+</figure>
+
+<p>Variants that post every order as a maker reach Sharpe ratios of eight on paper. They assume every
+resting order fills, which is the assumption Glosten and Milgrom warn against.<sup>9</sup> A resting order
+fills when the market comes to it, usually because the price is about to move the other way. They are
+reported and never selected. The realistic cost used from the second round on assumes 60 percent of the
+notional fills as a maker and the rest crosses.</p>
+</section>
+
+<section class="part">
+<span class="num">Part four</span>
+<h2>Every venue, every floor</h2>
+
+<p class="lede">The second round asked the question figure 2 forces. What is left once a coin has to trade
+a meaningful amount on both of its venues before the trade may touch it.</p>
+
+<p>Each arena was rerun at three liquidity floors, with the variant chosen on the first half by Sharpe
+ratio and then measured on the second, untouched half. The <i>t</i> statistics use a Newey and West
+variance,<sup>10</sup> and the best variant of each grid is deflated for the number of variants
+tried.<sup>11</sup></p>
+
+<figure>
+<!--fig4-->
+<svg viewBox="0 0 720 446" class="fig" role="img" aria-label="A grid of five arenas by three liquidity floors. Each cell is the selected variant's annual return in the held-out second half, with its t statistic and the number of coin pairs that passed the floor. The arenas without the first exchange earn one to three percent at every floor. Those that include it lose or earn nothing.">
+<text class="colhead" x="483.0" y="18" text-anchor="middle">Daily volume a coin needs on each venue</text><path class="bracket" d="M274 26 V31 H692 V26"/>
+<text class="share" x="341.0" y="56" text-anchor="middle">$250k</text>
+<text class="share" x="483.0" y="56" text-anchor="middle">$1M</text>
+<text class="share" x="625.0" y="56" text-anchor="middle">$5M</text>
+<text class="colhead" x="8" y="87">First exchange excluded</text><line class="grid" x1="8" x2="696" y1="94" y2="94"/>
+<text class="lab" x="8" y="125.0">Third against second</text>
+<g><title>Third against second, at least $250k a day: +1.22% a year in the second half, t +1.8, 122 pairs pass the floor on a median day</title><rect x="273" y="99" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--teal) 24%, var(--bg-2))"/><text class="cell-v" x="341.0" y="121.0" text-anchor="middle">+1.2%</text><text class="cell-t" x="341.0" y="136.0" text-anchor="middle">t +1.8, 122 pairs</text></g>
+<g><title>Third against second, at least $1M a day: +1.18% a year in the second half, t +1.9, 93 pairs pass the floor on a median day</title><rect x="415" y="99" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--teal) 23%, var(--bg-2))"/><text class="cell-v" x="483.0" y="121.0" text-anchor="middle">+1.2%</text><text class="cell-t" x="483.0" y="136.0" text-anchor="middle">t +1.9, 93 pairs</text></g>
+<g><title>Third against second, at least $5M a day: +1.33% a year in the second half, t +2.6, 49 pairs pass the floor on a median day</title><rect x="557" y="99" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--teal) 25%, var(--bg-2))" stroke="var(--ink)" stroke-width="1.6"/><text class="cell-v" x="625.0" y="121.0" text-anchor="middle">+1.3%</text><text class="cell-t" x="625.0" y="136.0" text-anchor="middle">t +2.6, 49 pairs</text></g>
+<text class="lab" x="8" y="175.0">Second, spot against perpetual</text>
+<g><title>Second, spot against perpetual, at least $250k a day: +2.34% a year in the second half, t +2.0, 160 pairs pass the floor on a median day</title><rect x="273" y="149" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--teal) 38%, var(--bg-2))"/><text class="cell-v" x="341.0" y="171.0" text-anchor="middle">+2.3%</text><text class="cell-t" x="341.0" y="186.0" text-anchor="middle">t +2.0, 160 pairs</text></g>
+<g><title>Second, spot against perpetual, at least $1M a day: +2.31% a year in the second half, t +2.0, 120 pairs pass the floor on a median day</title><rect x="415" y="149" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--teal) 38%, var(--bg-2))"/><text class="cell-v" x="483.0" y="171.0" text-anchor="middle">+2.3%</text><text class="cell-t" x="483.0" y="186.0" text-anchor="middle">t +2.0, 120 pairs</text></g>
+<g><title>Second, spot against perpetual, at least $5M a day: +3.19% a year in the second half, t +3.1, 77 pairs pass the floor on a median day</title><rect x="557" y="149" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--teal) 49%, var(--bg-2))" stroke="var(--ink)" stroke-width="1.6"/><text class="cell-v" x="625.0" y="171.0" text-anchor="middle">+3.2%</text><text class="cell-t" x="625.0" y="186.0" text-anchor="middle">t +3.1, 77 pairs</text></g>
+<text class="colhead" x="8" y="213">First exchange included</text><line class="grid" x1="8" x2="696" y1="220" y2="220"/>
+<text class="lab" x="8" y="251.0">First against second</text>
+<g><title>First against second, at least $250k a day: &#8722;0.93% a year in the second half, t &#8722;0.4, 46 pairs pass the floor on a median day</title><rect x="273" y="225" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--red) 20%, var(--bg-2))"/><text class="cell-v" x="341.0" y="247.0" text-anchor="middle">&#8722;0.9%</text><text class="cell-t" x="341.0" y="262.0" text-anchor="middle">t &#8722;0.4, 46 pairs</text></g>
+<g><title>First against second, at least $1M a day: &#8722;2.26% a year in the second half, t &#8722;1.4, 22 pairs pass the floor on a median day</title><rect x="415" y="225" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--red) 37%, var(--bg-2))"/><text class="cell-v" x="483.0" y="247.0" text-anchor="middle">&#8722;2.3%</text><text class="cell-t" x="483.0" y="262.0" text-anchor="middle">t &#8722;1.4, 22 pairs</text></g>
+<g><title>First against second, at least $5M a day: +0.15% a year in the second half, t +0.9, 8 pairs pass the floor on a median day</title><rect x="557" y="225" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--teal) 10%, var(--bg-2))"/><text class="cell-v" x="625.0" y="247.0" text-anchor="middle">+0.2%</text><text class="cell-t" x="625.0" y="262.0" text-anchor="middle">t +0.9, 8 pairs</text></g>
+<text class="lab" x="8" y="301.0">Any pair of the three</text>
+<g><title>Any pair of the three, at least $250k a day: &#8722;2.74% a year in the second half, t &#8722;1.0, 219 pairs pass the floor on a median day</title><rect x="273" y="275" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--red) 44%, var(--bg-2))"/><text class="cell-v" x="341.0" y="297.0" text-anchor="middle">&#8722;2.7%</text><text class="cell-t" x="341.0" y="312.0" text-anchor="middle">t &#8722;1.0, 219 pairs</text></g>
+<g><title>Any pair of the three, at least $1M a day: &#8722;4.38% a year in the second half, t &#8722;3.3, 127 pairs pass the floor on a median day</title><rect x="415" y="275" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--red) 60%, var(--bg-2))" stroke="var(--ink)" stroke-width="1.6"/><text class="cell-v" x="483.0" y="297.0" text-anchor="middle">&#8722;4.4%</text><text class="cell-t" x="483.0" y="312.0" text-anchor="middle">t &#8722;3.3, 127 pairs</text></g>
+<g><title>Any pair of the three, at least $5M a day: &#8722;1.38% a year in the second half, t &#8722;2.2, 65 pairs pass the floor on a median day</title><rect x="557" y="275" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--red) 26%, var(--bg-2))" stroke="var(--ink)" stroke-width="1.6"/><text class="cell-v" x="625.0" y="297.0" text-anchor="middle">&#8722;1.4%</text><text class="cell-t" x="625.0" y="312.0" text-anchor="middle">t &#8722;2.2, 65 pairs</text></g>
+<text class="lab" x="8" y="351.0">Second's spot, first's perpetual</text>
+<g><title>Second's spot, first's perpetual, at least $250k a day: &#8722;2.86% a year in the second half, t &#8722;0.9, 43 pairs pass the floor on a median day</title><rect x="273" y="325" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--red) 45%, var(--bg-2))"/><text class="cell-v" x="341.0" y="347.0" text-anchor="middle">&#8722;2.9%</text><text class="cell-t" x="341.0" y="362.0" text-anchor="middle">t &#8722;0.9, 43 pairs</text></g>
+<g><title>Second's spot, first's perpetual, at least $1M a day: &#8722;0.31% a year in the second half, t &#8722;1.9, 21 pairs pass the floor on a median day</title><rect x="415" y="325" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--red) 12%, var(--bg-2))"/><text class="cell-v" x="483.0" y="347.0" text-anchor="middle">&#8722;0.3%</text><text class="cell-t" x="483.0" y="362.0" text-anchor="middle">t &#8722;1.9, 21 pairs</text></g>
+<g><title>Second's spot, first's perpetual, at least $5M a day: &#8722;0.12% a year in the second half, t &#8722;1.2, 8 pairs pass the floor on a median day</title><rect x="557" y="325" width="136" height="44" rx="3" style="fill:color-mix(in srgb, var(--red) 10%, var(--bg-2))"/><text class="cell-v" x="625.0" y="347.0" text-anchor="middle">&#8722;0.1%</text><text class="cell-t" x="625.0" y="362.0" text-anchor="middle">t &#8722;1.2, 8 pairs</text></g>
+<rect x="270.0" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--red) 58%, var(--bg-2))"/>
+<rect x="276.2" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--red) 54%, var(--bg-2))"/>
+<rect x="282.5" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--red) 49%, var(--bg-2))"/>
+<rect x="288.8" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--red) 45%, var(--bg-2))"/>
+<rect x="295.0" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--red) 40%, var(--bg-2))"/>
+<rect x="301.2" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--red) 36%, var(--bg-2))"/>
+<rect x="307.5" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--red) 32%, var(--bg-2))"/>
+<rect x="313.8" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--red) 28%, var(--bg-2))"/>
+<rect x="320.0" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--red) 23%, var(--bg-2))"/>
+<rect x="326.2" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--red) 19%, var(--bg-2))"/>
+<rect x="332.5" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--red) 15%, var(--bg-2))"/>
+<rect x="338.8" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--red) 10%, var(--bg-2))"/>
+<rect x="345.0" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--teal) 10%, var(--bg-2))"/>
+<rect x="351.2" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--teal) 15%, var(--bg-2))"/>
+<rect x="357.5" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--teal) 19%, var(--bg-2))"/>
+<rect x="363.8" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--teal) 23%, var(--bg-2))"/>
+<rect x="370.0" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--teal) 28%, var(--bg-2))"/>
+<rect x="376.2" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--teal) 32%, var(--bg-2))"/>
+<rect x="382.5" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--teal) 36%, var(--bg-2))"/>
+<rect x="388.8" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--teal) 40%, var(--bg-2))"/>
+<rect x="395.0" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--teal) 45%, var(--bg-2))"/>
+<rect x="401.2" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--teal) 49%, var(--bg-2))"/>
+<rect x="407.5" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--teal) 53%, var(--bg-2))"/>
+<rect x="413.8" y="402" width="6.7" height="10" style="fill:color-mix(in srgb, var(--teal) 58%, var(--bg-2))"/>
+<text class="tick" x="270.0" y="428" text-anchor="middle">&#8722;4%</text>
+<text class="tick" x="345.0" y="428" text-anchor="middle">0%</text>
+<text class="tick" x="420.0" y="428" text-anchor="middle">+4%</text>
+<text class="note" x="8" y="411">Return a year, held-out half</text><rect x="456" y="400" width="20" height="14" rx="3" style="fill:var(--bg-2)" stroke="var(--ink)" stroke-width="1.6"/><text class="note" x="484" y="411">t statistic of 2 or more either way</text>
+</svg>
+<!--/fig4-->
+<figcaption><b>Figure 4.</b> The second round. Each row is an arena, a set of coin pairs whose funding
+gap can be traded, and each column a liquidity floor, the dollar volume a coin must trade a day on both of
+its venues. A cell gives the annual return of the variant chosen on the first half, measured on the
+untouched second half, with its <i>t</i> statistic and the number of pairs that passed the floor on a
+median day. Outlined cells have a <i>t</i> of 2 or more either way. The two arenas without the first exchange earn
+one to three percent at every floor. The three that include it lose or earn nothing, and the arena that
+picks from every pair of the three exchanges loses clearly at the two higher floors.</figcaption>
+</figure>
+
+<p>The third exchange against the second is the most interesting failure, because it is robust. It earns about 1.2 percent
+a year at every floor, with a <i>t</i> of 2.6 at the highest, which is roughly 13 thousand dollars a year
+on a million dollars a leg. Two deep markets disagree a little, and consistently, and the disagreement is
+worth less than a savings account. A third round restricted every arena to coins trading over 200 million
+dollars a day. On the first exchange only bitcoin and ether qualify, and on the largest coins the spread
+between venues earns nothing in either pair, slightly less than nothing between the third and second.</p>
+</section>
+
+<figure class="divider">
+  <img src="i.png" alt="A sepia engraving of a tidal mill in cross-section, its large brass-coloured
+    wheel half under water, a sluice gate and a millrace beside it, and a marked tide gauge standing in the
+    water at the right." width="1916" height="821" loading="lazy"
+    onerror="this.closest('figure').classList.add('noimg')">
+  <figcaption>Generated with OpenAI Image Generator</figcaption>
+</figure>
+
+<section class="part">
+<span class="num">Part five</span>
+<h2>The trade that survives is the oldest one</h2>
+
+<p class="lede">Every arena that earned anything shared one feature. It held the funding of a deep market
+rather than the difference between two of them.</p>
+
+<p>Cash and carry is that trade in its plainest form. Buy the coin, sell the same amount short on its
+perpetual, and collect what longs pay shorts. Koijen, Moskowitz, Pedersen and Vrugt show that carry,
+defined as the return an asset earns if its price stays put, predicts returns across every major asset
+class.<sup>12</sup> Schmeling, Schrimpf and Todorov document that crypto carry was enormous in 2020 and
+2021 and has shrunk since, and that it rises with the demand for leverage from small
+traders.<sup>13</sup></p>
+
+<figure>
+<!--fig5-->
+<svg viewBox="0 0 720 372" class="fig" role="img" aria-label="Diagram of cash and carry. The coin is bought on spot and counts as collateral, the same amount is sold short on the perpetual, and the short receives funding every hour while it is positive. Below, one exit and re-entry costs about as much as 6 weeks of carry, nearly all of it the spot fee.">
+<rect class="dg-box" x="24" y="16" width="270" height="138" rx="8"/><rect class="dg-long-band" x="24" y="16" width="5" height="138" rx="2"/><text class="dg-leg dg-long" x="46" y="40">SPOT, LONG</text><text class="dg-h" x="46" y="66">Buy 1 BTC</text>
+<text class="dg-t" x="46" y="92">fee 0.25 to 0.40% a side</text>
+<text class="dg-t" x="46" y="111">counts as collateral at 99%</text>
+<text class="dg-t" x="46" y="130">of its value, backing the short</text>
+<rect class="dg-box" x="426" y="16" width="270" height="138" rx="8"/><rect class="dg-short-band" x="426" y="16" width="5" height="138" rx="2"/><text class="dg-leg dg-short" x="448" y="40">PERPETUAL, SHORT</text><text class="dg-h" x="448" y="66">Sell 1 BTC perpetual</text>
+<text class="dg-t" x="448" y="92">fee 0.02 to 0.05% a side</text>
+<text class="dg-t" x="448" y="111">receives funding while it is positive,</text>
+<text class="dg-t" x="448" y="130">pays it while it is negative</text>
+<line class="dg-cross" x1="294" x2="426" y1="78" y2="78"/><rect class="dg-pill" x="302" y="64" width="116" height="28" rx="14"/><text class="dg-t" x="360" y="82.5" text-anchor="middle">same size</text><text class="dg-t dg-c" x="360" y="114" text-anchor="middle">price moves</text><text class="dg-t dg-c" x="360" y="131" text-anchor="middle">cancel</text>
+<text class="dg-leg dg-c" x="24" y="196">STEPPING OUT AND BACK IN ONCE, AGAINST THE CARRY IT GIVES UP</text>
+<line class="axis" x1="250.0" x2="250.0" y1="210" y2="334"/><text class="tick" x="250.0" y="352" text-anchor="middle">0%</text>
+<line class="grid" x1="342.9" x2="342.9" y1="210" y2="334"/><text class="tick" x="342.9" y="352" text-anchor="middle">0.25%</text>
+<line class="grid" x1="435.8" x2="435.8" y1="210" y2="334"/><text class="tick" x="435.8" y="352" text-anchor="middle">0.5%</text>
+<line class="grid" x1="528.8" x2="528.8" y1="210" y2="334"/><text class="tick" x="528.8" y="352" text-anchor="middle">0.75%</text>
+<line class="grid" x1="621.7" x2="621.7" y1="210" y2="334"/><text class="tick" x="621.7" y="352" text-anchor="middle">1%</text>
+<text class="lab-strong" x="236" y="230" text-anchor="end">One exit and re-entry</text><text class="note" x="236" y="246" text-anchor="end">both legs, fees used in this study</text>
+<rect class="wf-neg" x="250.0" y="222" width="230.4" height="22"/>
+<text class="seg-in" x="258.0" y="237">spot fees 0.62%</text>
+<rect class="seg-rest" x="480.4" y="222" width="53.5" height="22"/>
+<text class="pt" x="542.0" y="237">0.76% in all</text>
+<text class="lab-strong" x="236" y="290" text-anchor="end">6 weeks of carry</text><text class="note" x="236" y="306" text-anchor="end">at the 2024 to 2026 rate, 6.9% a year</text>
+<rect class="wf-net" x="250.0" y="282" width="294.2" height="22"/>
+<text class="pt" x="552.2" y="297">0.79%</text>
+<text class="note" x="534.0" y="260" text-anchor="end">grey, perpetual fees, spread and slippage</text>
+</svg>
+<!--/fig5-->
+<figcaption><b>Figure 5.</b> Cash and carry on bitcoin or ether. The first exchange counts both at 99 percent of
+their value as collateral for its perpetuals, so the coin bought on spot can itself back the short, and
+the two price exposures cancel apart from the small gap between the spot and perpetual prices. Below, the
+cost of stepping out and back in once, with the fees this study used, against the carry the position
+earned over the same stretch at its 2024 to 2026 rate. The spot fee is nearly all of that cost, which is
+why the rule that holds the position throughout beats every rule that switches.</figcaption>
+</figure>
+
+<p>The fourth round ran it on bitcoin and ether at the first exchange's retail fees, over the second
+exchange's five-year history and over the first exchange's own year. Twelve rules were registered, from always holding to holding only while
+trailing funding exceeds a threshold, each with a seven and a thirty day window. The rule that always holds won on both histories.</p>
+
+<figure>
+<!--fig6-->
+<svg viewBox="0 0 720 356" class="fig" role="img" aria-label="Bars of the always-on BTC and ETH carry return by year on the second exchange's history after the first exchange's fees, each with a mark at the year's average funding. The carry follows funding closely, high in 2021 and 2024 and low since.">
+<rect class="band" x="378.0" y="44" width="322.0" height="246"/><text class="note" x="388.0" y="60">held-out half, 6.9% a year, <tspan font-style="italic">t</tspan> 9.8</text>
+<line class="axis" x1="56" x2="700" y1="290.0" y2="290.0"/><text class="tick" x="48" y="294.0" text-anchor="end">0%</text>
+<line class="grid" x1="56" x2="700" y1="235.0" y2="235.0"/><text class="tick" x="48" y="239.0" text-anchor="end">10%</text>
+<line class="grid" x1="56" x2="700" y1="180.0" y2="180.0"/><text class="tick" x="48" y="184.0" text-anchor="end">20%</text>
+<line class="grid" x1="56" x2="700" y1="125.0" y2="125.0"/><text class="tick" x="48" y="129.0" text-anchor="end">30%</text>
+<line class="grid" x1="56" x2="700" y1="70.0" y2="70.0"/><text class="tick" x="48" y="74.0" text-anchor="end">40%</text>
+<text class="axlab" x="16" y="54">Return a year</text>
+<rect class="bar-carry" x="87.7" y="109.4" width="44" height="180.6"><title>2021, carry +32.8% after costs</title></rect><line class="fund-mark" x1="77.7" x2="141.7" y1="102.6" y2="102.6"><title>2021, funding +34.1% a year</title></line><text class="pt" x="109.7" y="78.6" text-anchor="middle">+32.8%</text><text class="note" x="109.7" y="93.6" text-anchor="middle">funding 34.1%</text><text class="tick" x="109.7" y="308" text-anchor="middle">2021</text>
+<rect class="bar-carry" x="195.0" y="276.8" width="44" height="13.2"><title>2022, carry +2.4% after costs</title></rect><line class="fund-mark" x1="185.0" x2="249.0" y1="276.4" y2="276.4"><title>2022, funding +2.5% a year</title></line><text class="pt" x="217.0" y="252.4" text-anchor="middle">+2.4%</text><text class="note" x="217.0" y="267.4" text-anchor="middle">funding 2.5%</text><text class="tick" x="217.0" y="308" text-anchor="middle">2022</text>
+<rect class="bar-carry" x="302.3" y="246.4" width="44" height="43.6"><title>2023, carry +7.9% after costs</title></rect><line class="fund-mark" x1="292.3" x2="356.3" y1="245.7" y2="245.7"><title>2023, funding +8.1% a year</title></line><text class="pt" x="324.3" y="221.7" text-anchor="middle">+7.9%</text><text class="note" x="324.3" y="236.7" text-anchor="middle">funding 8.1%</text><text class="tick" x="324.3" y="308" text-anchor="middle">2023</text>
+<rect class="bar-carry" x="409.7" y="221.2" width="44" height="68.8"><title>2024, carry +12.5% after costs</title></rect><line class="fund-mark" x1="399.7" x2="463.7" y1="221.6" y2="221.6"><title>2024, funding +12.4% a year</title></line><text class="pt" x="431.7" y="197.2" text-anchor="middle">+12.5%</text><text class="note" x="431.7" y="212.2" text-anchor="middle">funding 12.4%</text><text class="tick" x="431.7" y="308" text-anchor="middle">2024</text>
+<rect class="bar-carry" x="517.0" y="262.5" width="44" height="27.5"><title>2025, carry +5.0% after costs</title></rect><line class="fund-mark" x1="507.0" x2="571.0" y1="262.3" y2="262.3"><title>2025, funding +5.0% a year</title></line><text class="pt" x="539.0" y="238.3" text-anchor="middle">+5.0%</text><text class="note" x="539.0" y="253.3" text-anchor="middle">funding 5.0%</text><text class="tick" x="539.0" y="308" text-anchor="middle">2025</text>
+<rect class="bar-carry" x="624.3" y="279.3" width="44" height="10.7"><title>2026 to 7 October, annualised, carry +1.9% after costs</title></rect><line class="fund-mark" x1="614.3" x2="678.3" y1="276.5" y2="276.5"><title>2026 to 7 October, annualised, funding +2.4% a year</title></line><text class="pt" x="646.3" y="252.5" text-anchor="middle">+1.9%</text><text class="note" x="646.3" y="267.5" text-anchor="middle">funding 2.4%</text><text class="tick" x="646.3" y="308" text-anchor="middle">2026</text>
+<text class="note" x="646.3" y="323" text-anchor="middle">to 7 Oct, annualised</text>
+<rect class="bar-carry" x="56" y="336" width="12" height="10"/><text class="note" x="74" y="345">carry after the first exchange's fees</text><line class="fund-mark" x1="306" x2="326" y1="341" y2="341"/><text class="note" x="334" y="345">average BTC and ETH funding on the second exchange</text>
+</svg>
+<!--/fig6-->
+<figcaption><b>Figure 6.</b> The always-on carry by year on the second exchange's five-year history,
+charged the first exchange's fees, with a mark at the year's average bitcoin and ether funding. The carry is the funding less
+a sliver of costs and of the gap between spot and perpetual prices, so each bar sits within 1.3 points of its mark.
+It is high when leverage is in demand and close to nothing when it is not. The shaded years are the
+half the rules were not chosen on.</figcaption>
+</figure>
+
+<p>The years tell the story the literature predicts. The carry earned 32.8 percent in 2021, 2.4 in 2022,
+7.9 in 2023, 12.5 in 2024 and 5.0 in 2025, and is running near 2 percent a year in 2026. In 2024 to 2026 it
+earned 6.9 percent a year at a <i>t</i> statistic of 9.8, with its deepest drawdown under one percent over
+the whole sample. Over the first exchange's own year, on its own funding, perpetual and spot index, it earned 2.1
+percent at a <i>t</i> of 2.9.</p>
+
+<figure>
+<!--fig7-->
+<svg viewBox="0 0 720 350" class="fig" role="img" aria-label="Dot plot of the eleven carry rules, the return a year in 2024 to 2026 on the long history and over the first exchange's own year, for a 30-day and a 7-day window. Always holding is best in both, and the higher the threshold the less a rule earns.">
+<text class="colhead" x="8" y="44">Hold while trailing</text><text class="colhead" x="8" y="58">funding a year is</text>
+<text class="colhead" x="196" y="44">LONG HISTORY, 2024 TO 2026</text>
+<line class="axis" x1="196.0" x2="196.0" y1="66" y2="278"/><text class="tick" x="196.0" y="296" text-anchor="middle">0%</text>
+<line class="grid" x1="257.0" x2="257.0" y1="66" y2="278"/><text class="tick" x="257.0" y="296" text-anchor="middle">+2%</text>
+<line class="grid" x1="318.0" x2="318.0" y1="66" y2="278"/><text class="tick" x="318.0" y="296" text-anchor="middle">+4%</text>
+<line class="grid" x1="379.0" x2="379.0" y1="66" y2="278"/><text class="tick" x="379.0" y="296" text-anchor="middle">+6%</text>
+<line class="grid" x1="440.0" x2="440.0" y1="66" y2="278"/><text class="tick" x="440.0" y="296" text-anchor="middle">+8%</text>
+<circle class="dot-always" cx="405.2" cy="91.0" r="6"><title>always hold, +6.86% a year</title></circle><text class="pt" x="417.2" y="95.0">+6.9%</text>
+<line class="pair" x1="394.6" x2="332.5" y1="125.0" y2="125.0"/>
+<circle class="dot-proxy" cx="394.6" cy="125.0" r="5.5"><title>Funding above 0%, 30-day window, +6.51% a year</title></circle>
+<circle class="dot-hollow" cx="332.5" cy="125.0" r="5.5"><title>Funding above 0%, 7-day window, +4.48% a year</title></circle>
+<line class="pair" x1="361.4" x2="324.3" y1="159.0" y2="159.0"/>
+<circle class="dot-proxy" cx="361.4" cy="159.0" r="5.5"><title>above 5%, 30-day window, +5.42% a year</title></circle>
+<circle class="dot-hollow" cx="324.3" cy="159.0" r="5.5"><title>above 5%, 7-day window, +4.21% a year</title></circle>
+<line class="pair" x1="318.9" x2="310.1" y1="193.0" y2="193.0"/>
+<circle class="dot-proxy" cx="318.9" cy="193.0" r="5.5"><title>above 10%, 30-day window, +4.03% a year</title></circle>
+<circle class="dot-hollow" cx="310.1" cy="193.0" r="5.5"><title>above 10%, 7-day window, +3.74% a year</title></circle>
+<line class="pair" x1="281.0" x2="285.4" y1="227.0" y2="227.0"/>
+<circle class="dot-proxy" cx="281.0" cy="227.0" r="5.5"><title>above 15%, 30-day window, +2.79% a year</title></circle>
+<circle class="dot-hollow" cx="285.4" cy="227.0" r="5.5"><title>above 15%, 7-day window, +2.93% a year</title></circle>
+<line class="pair" x1="217.8" x2="226.3" y1="261.0" y2="261.0"/>
+<circle class="dot-proxy" cx="217.8" cy="261.0" r="5.5"><title>above 25%, 30-day window, +0.71% a year</title></circle>
+<circle class="dot-hollow" cx="226.3" cy="261.0" r="5.5"><title>above 25%, 7-day window, +0.99% a year</title></circle>
+<text class="colhead" x="486" y="44">FIRST EXCHANGE, OWN YEAR</text>
+<line class="grid" x1="486.0" x2="486.0" y1="66" y2="278"/><text class="tick" x="486.0" y="296" text-anchor="middle">&#8722;2%</text>
+<line class="grid" x1="528.8" x2="528.8" y1="66" y2="278"/><text class="tick" x="528.8" y="296" text-anchor="middle">&#8722;1%</text>
+<line class="axis" x1="571.6" x2="571.6" y1="66" y2="278"/><text class="tick" x="571.6" y="296" text-anchor="middle">0%</text>
+<line class="grid" x1="614.4" x2="614.4" y1="66" y2="278"/><text class="tick" x="614.4" y="296" text-anchor="middle">+1%</text>
+<line class="grid" x1="657.2" x2="657.2" y1="66" y2="278"/><text class="tick" x="657.2" y="296" text-anchor="middle">+2%</text>
+<line class="grid" x1="700.0" x2="700.0" y1="66" y2="278"/><text class="tick" x="700.0" y="296" text-anchor="middle">+3%</text>
+<circle class="dot-always" cx="660.0" cy="91.0" r="6"><title>always hold, +2.06% a year</title></circle><text class="pt" x="672.0" y="95.0">+2.1%</text>
+<line class="pair" x1="622.1" x2="514.3" y1="125.0" y2="125.0"/>
+<circle class="dot-proxy" cx="622.1" cy="125.0" r="5.5"><title>Funding above 0%, 30-day window, +1.18% a year</title></circle>
+<circle class="dot-hollow" cx="514.3" cy="125.0" r="5.5"><title>Funding above 0%, 7-day window, &#8722;1.34% a year</title></circle>
+<line class="pair" x1="580.0" x2="546.2" y1="159.0" y2="159.0"/>
+<circle class="dot-proxy" cx="580.0" cy="159.0" r="5.5"><title>above 5%, 30-day window, +0.20% a year</title></circle>
+<circle class="dot-hollow" cx="546.2" cy="159.0" r="5.5"><title>above 5%, 7-day window, &#8722;0.59% a year</title></circle>
+<circle class="dot-hollow" cx="568.0" cy="193.0" r="5.5"><title>above 10%, 7-day window, &#8722;0.08% a year</title></circle>
+<text class="note" x="579.6" y="231.0">never entered</text>
+<text class="note" x="579.6" y="265.0">never entered</text>
+<text class="lab-strong" x="176" y="95.0" text-anchor="end">Always hold</text>
+<text class="lab" x="176" y="129.0" text-anchor="end">Funding above 0%</text>
+<text class="lab" x="176" y="163.0" text-anchor="end">above 5%</text>
+<text class="lab" x="176" y="197.0" text-anchor="end">above 10%</text>
+<text class="lab" x="176" y="231.0" text-anchor="end">above 15%</text>
+<text class="lab" x="176" y="265.0" text-anchor="end">above 25%</text>
+<text class="axlab" x="448.0" y="318" text-anchor="middle">return a year after the first exchange's fees</text><circle class="dot-proxy" cx="196" cy="338" r="5"/><text class="note" x="206" y="342">30-day window</text><circle class="dot-hollow" cx="316" cy="338" r="5"/><text class="note" x="326" y="342">7-day window</text>
+</svg>
+<!--/fig7-->
+<figcaption><b>Figure 7.</b> Every registered rule, by its return a year in the held-out years of the
+long history (left) and over the first exchange's own year (right). Each threshold rule holds the position only while
+trailing funding exceeds it, judged over 30 days (filled) or 7 days (hollow). Always holding needs no
+window and is best in both panels. On the first exchange the 15 and 25 percent thresholds never fired, and nor did
+10 percent on the 30-day window. Waiting for a threshold costs twice. Every exit and re-entry pays
+the first exchange's spot fee of 0.25 to 0.40 percent, and the rule sits out much of the time that funding on bitcoin
+and ether is positive.</figcaption>
+</figure>
+
+<div class="note-box">
+<span class="h">What the carry is paid for</span>
+<p>Its exposure to price is close to nil, and its return still carries two risks. The return is the price of
+leverage, which can stay near zero for a year, as in 2022 and so far in 2026, and can turn negative for
+weeks. Its whole position sits on one exchange, so the failure of that exchange is a loss of the
+position rather than of a margin balance.</p>
+<p>Nor is it a secret. It is the most widely known trade in crypto, and the compression since 2021 is
+what competition looks like when anyone can run it.</p>
+</div>
+</section>
+
+<section class="part">
+<span class="num">Part six</span>
+<h2>What the evidence will bear</h2>
+
+<p>The cross-venue result is a well-supported negative. Five arenas, three rounds and several thousand
+variants agree that the funding spread is wide only where it cannot be traded at a useful size. The one
+venue pair with depth on both sides, the third exchange against the second, pays about one percent a year.</p>
+
+<p>The carry result is a positive with a regime attached. Its <i>t</i> statistics are large because its
+returns are smooth, which says little about how it will do next. Most of its five-year return came from two years,
+2021 and 2024, when leverage was in heavy demand. The first exchange's own funding history covers one year, so
+its result rests mostly on the second exchange's history priced with the first's fees, and the spot leg
+uses the first exchange's index rather than fills on its spot book. Every variant tried across the four rounds counts against the
+best of them, and the grids were large.</p>
+
+<p>Two things would change these conclusions. A second year of the first exchange's funding archive,
+collected daily since this study began, will let its result stand on its own data. And a period of strong leverage
+demand like 2021 or 2024 would show how much of the carry's history repeats when competition is as dense
+as it is now.</p>
+</section>
+
+<section class="part">
+<span class="num">Methods</span>
+<h2>How the numbers were produced</h2>
+
+<h3>Data</h3>
+<p>The first exchange's hourly funding, hourly candles and the spot index of its linear perpetuals, from
+October 2025. The second exchange's funding from its archive and its interface, its perpetual prices
+hourly and daily, and its spot prices, from 2021. The third exchange's funding and daily prices from its
+public interface, from 2021. A coin
+enters an arena on the days both of its legs have funding and prices.</p>
+
+<h3>The trade</h3>
+<p>A daily decision at midnight UTC uses only funding printed before it. The signal is the spread between
+the two venues' funding, annualised and averaged over a trailing window of eight hours to thirty days. A
+coin becomes active above an entry threshold and leaves below half of it, and the arm holds the most
+extreme active coins in equal weight. Funding is booked at each venue's own prints. The price leg is the
+long leg's return less the short leg's, from closes at midnight. Costs are each venue's taker fee, 3 basis
+points of half spread and 1 of slippage per side, or a blend with 60 percent at the maker fee. Spot pays
+0.10 percent on the second exchange and 0.25 to 0.40 percent on the first, the latter at its retail tier.</p>
+
+<h3>Arenas and rounds</h3>
+<p>Round one ran 192 variants in each of five arenas, the first exchange against the second, the third
+against the second, the widest of the three, cash and carry on the second, and the second's spot against
+the first's perpetual. Round two added
+liquidity floors of 250 thousand, 1 million and 5 million dollars a day on the thinner leg, measured over
+the 30 days before each decision, and the blended cost. Round three restricted the arenas to coins over
+200 million dollars a day. Round four ran twelve carry rules on bitcoin and ether at the first exchange's fees.</p>
+
+<h3>Statistics and protocol</h3>
+<p>Every round was written down before it ran, with its arms, its pass rule and a change log for anything
+clarified before results existed. Variants are selected on the first half of each history and measured on
+the second. <i>t</i> statistics use a Newey and West variance on daily returns,<sup>10</sup> and the best
+variant of each grid is deflated over its grid's size.<sup>11</sup> The margin each leg needs is measured
+from the largest single-leg move within a day among the positions actually held. Every figure is drawn by
+a script from the stored results, and the derived numbers in the text come from the same store.</p>
+</section>
+
+<section class="part">
+<span class="num">Register</span>
+<h2>Every round, and what it showed</h2>
+<ol class="reg">
+<li><div class="k">M1–M5</div><div><div class="t">Measurements</div><div class="d">First against second
+exchange, spread median 12.5 percent a year, 90th percentile 71 percent. Signs last a median of two days. The trailing
+day explains 16 percent of the next. Single legs of mid-cap coins moved by as much as 187 percent within a day.</div></div></li>
+<li><div class="k">R1 · A</div><div><div class="t">Registered primary, first against second exchange</div><div class="d">+13.2
+percent a year, <i>t</i> 1.48, halves +26.1 and −0.7 percent. Carry 88.5, costs 63.3, price gap −12.0
+percent a year. Fails.</div></div></li>
+<li><div class="k">R1 · grid</div><div><div class="t">960 variants across five arenas</div><div class="d">The
+best taker arm in A earns 17.4 percent at Sharpe 4.0, with 92 percent of its profit from coins under $250k a
+day on the first exchange and 1 percent from coins over $1M.</div></div></li>
+<li><div class="k">R2</div><div><div class="t">Liquidity floors, held-out half</div><div class="d">A −0.9,
+−2.3 and +0.2 percent at $250k, $1M and $5M. C −2.7, −4.4 and −1.4. B +1.2, +1.2 and +1.3. Cash and carry on
+the second exchange +2.3, +2.3 and +3.2. The second's spot against the first's perpetual −2.9, −0.3 and
+−0.1.</div></div></li>
+<li><div class="k">R3</div><div><div class="t">The majors, over $200M a day</div><div class="d">The cross-venue
+spread on bitcoin and ether is nothing in either venue pair. Cash and carry on the second exchange on the two coins earns
+9.6 percent a year at Sharpe 7.7.</div></div></li>
+<li class="pass"><div class="k">R4</div><div><div class="t">Carry on bitcoin and ether on the first exchange alone</div><div class="d">Always
+on is selected. +10.8 percent a year over the whole history, +6.9 percent in 2024 to 2026 at <i>t</i> 9.8,
++2.1 percent over the first exchange's own year. Every threshold rule earns less, because switching pays the spot fee.
+Passes.</div></div></li>
+</ol>
+</section>
+
+<section class="part">
+<span class="num">References</span>
+<ol class="refs">
+<li>Budish, E., Cramton, P., and Shim, J. (2015). The high-frequency trading arms race. Frequent batch
+  auctions as a market design response. <i>Quarterly Journal of Economics</i>, 130(4), 1547&ndash;1621.</li>
+<li>Foucault, T., Kozhan, R., and Tham, W. W. (2017). Toxic arbitrage. <i>Review of Financial Studies</i>,
+  30(4), 1053&ndash;1094.</li>
+<li>Makarov, I., and Schoar, A. (2020). Trading and arbitrage in cryptocurrency markets. <i>Journal of
+  Financial Economics</i>, 135(2), 293&ndash;319.</li>
+<li>Crépellière, T., Pelster, M., and Zeisberger, S. (2023). Arbitrage in the market for cryptocurrencies.
+  <i>Journal of Financial Markets</i>, 64, 100817.</li>
+<li>He, S., Manela, A., Ross, O., and von Wachter, V. (2022). Fundamentals of perpetual futures.
+  <i>arXiv</i> 2212.06888.</li>
+<li>Brunnermeier, M. K., and Pedersen, L. H. (2009). Market liquidity and funding liquidity. <i>Review of
+  Financial Studies</i>, 22(6), 2201&ndash;2238.</li>
+<li>Shleifer, A., and Vishny, R. W. (1997). The limits of arbitrage. <i>Journal of Finance</i>, 52(1),
+  35&ndash;55.</li>
+<li>Amihud, Y. (2002). Illiquidity and stock returns. Cross-section and time-series effects. <i>Journal of
+  Financial Markets</i>, 5(1), 31&ndash;56.</li>
+<li>Glosten, L. R., and Milgrom, P. R. (1985). Bid, ask and transaction prices in a specialist market with
+  heterogeneously informed traders. <i>Journal of Financial Economics</i>, 14(1), 71&ndash;100.</li>
+<li>Newey, W. K., and West, K. D. (1987). A simple, positive semi-definite, heteroskedasticity and
+  autocorrelation consistent covariance matrix. <i>Econometrica</i>, 55(3), 703&ndash;708.</li>
+<li>Bailey, D. H., and López de Prado, M. (2014). The deflated Sharpe ratio. Correcting for selection bias,
+  backtest overfitting and non normality. <i>Journal of Portfolio Management</i>, 40(5), 94&ndash;107.</li>
+<li>Koijen, R. S. J., Moskowitz, T. J., Pedersen, L. H., and Vrugt, E. B. (2018). Carry. <i>Journal of
+  Financial Economics</i>, 127(2), 197&ndash;225.</li>
+<li>Schmeling, M., Schrimpf, A., and Todorov, K. (2023). Crypto carry. <i>BIS Working Papers</i>, 1087.</li>
+</ol>
+</section>
+
+</div>
+
+<div class="bar">
+  <span>HydraTrade funding research report, November 2026</span>
+  <button id="t" type="button" aria-label="Switch between light and dark">Change theme</button>
+</div>
+
+<script>
+(function(){
+  var b=document.getElementById('t'), r=document.documentElement;
+  function cur(){ return r.getAttribute('data-theme') ||
+    (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+  try{ var s=localStorage.getItem('h5theme'); if(s) r.setAttribute('data-theme',s); }catch(e){}
+  b.addEventListener('click', function(){
+    var n = cur()==='dark' ? 'light' : 'dark';
+    r.setAttribute('data-theme', n);
+    try{ localStorage.setItem('h5theme', n); }catch(e){}
+  });
+})();
+</script>
+<script>
+/* citation pop-ups: each numeric superscript shows those entries of the reference list */
+(function(){
+  var refs=document.querySelectorAll('ol.refs li');
+  document.querySelectorAll('sup').forEach(function(s){
+    if(/^\d+(,\d+)*$/.test(s.textContent)){
+      s.className='cite'; s.tabIndex=0; s.dataset.refs=s.textContent;
+    }
+  });
+  var tip=document.createElement('div'), open=null;
+  tip.className='cite-tip'; tip.id='cite-tip'; tip.setAttribute('role','tooltip'); tip.hidden=true;
+  document.body.appendChild(tip);
+  function show(el){
+    tip.innerHTML=el.dataset.refs.split(',').map(function(k){
+      var li=refs[+k-1];
+      return li ? '<p>'+(+k)+'. '+li.innerHTML+'</p>' : '';
+    }).join('');
+    tip.hidden=false;
+    if(open) open.removeAttribute('aria-describedby');
+    open=el; el.setAttribute('aria-describedby','cite-tip');
+    var r=el.getBoundingClientRect(), w=tip.offsetWidth, h=tip.offsetHeight;
+    tip.style.left=Math.max(16, Math.min(r.left+r.width/2-w/2, innerWidth-w-16))+'px';
+    tip.style.top=(r.top-h-8>8 ? r.top-h-8 : r.bottom+8)+'px';
+  }
+  function hide(){
+    if(open) open.removeAttribute('aria-describedby');
+    open=null; tip.hidden=true;
+  }
+  function cite(e){ return e.target.closest && e.target.closest('.cite'); }
+  document.addEventListener('mouseover', function(e){ var c=cite(e); if(c) show(c); });
+  document.addEventListener('mouseout', function(e){ if(cite(e)) hide(); });
+  document.addEventListener('focusin', function(e){ var c=cite(e); if(c) show(c); });
+  document.addEventListener('focusout', hide);
+  document.addEventListener('click', function(e){ var c=cite(e); if(!c) hide(); else if(c!==open) show(c); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') hide(); });
+  addEventListener('scroll', hide, {passive:true});
+})();
+</script>
+<section class="ht-series" id="series" aria-label="More in this series"><h2>The HydraTrade series</h2><div class="ht-nav"><a class="ht-card ht-prev" href="../iv/"><span class="ht-dir">&larr; Previous report</span><span class="ht-t">HydraTrade IV: Most of the Picture Was Already There</span></a><a class="ht-card ht-next" href="../vi/"><span class="ht-dir">Next report &rarr;</span><span class="ht-t">HydraTrade VI: Where the Leverage Went</span></a></div><a class="ht-all" href="../#reports">All reports</a><p class="ht-note">Research publications of Ciya Labs. Not investment advice; backtested and simulated results do not predict future returns. <a href="https://ciyalabs.com/imprint.html" style="color:inherit">Imprint</a> &middot; <a href="https://ciyalabs.com/privacy.html" style="color:inherit">Privacy</a></p></section>
+</body>
+</html>
