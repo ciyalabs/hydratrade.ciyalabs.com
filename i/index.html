@@ -179,6 +179,16 @@ pre code{background:none;padding:0}
 .ht-series .ht-all{display:inline-block;margin-top:18px;color:inherit;font-size:14px;opacity:.75}
 .ht-series .ht-all:hover{opacity:1}
 .ht-series .ht-note{margin-top:22px;font-size:12px;line-height:1.6;opacity:.6}
+.ht-sub{margin:0 0 56px;padding:22px 22px 18px;border:1px solid color-mix(in srgb,currentColor 22%,transparent);border-radius:4px}
+.ht-sub-t{display:block;font-size:18px;line-height:1.35;font-weight:600;margin-bottom:12px}
+.ht-sub-row{display:flex;gap:10px;flex-wrap:wrap}
+.ht-sub input[type=email]{flex:1 1 220px;min-width:0;padding:11px 12px;font:inherit;font-size:15px;color:inherit;
+  background:transparent;border:1px solid color-mix(in srgb,currentColor 35%,transparent);border-radius:3px}
+.ht-sub input[type=email]::placeholder{color:inherit;opacity:.45}
+.ht-sub button{padding:11px 18px;font:inherit;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:inherit;background:color-mix(in srgb,currentColor 12%,transparent);border:1px solid currentColor;border-radius:3px;cursor:pointer}
+.ht-sub button:hover{background:color-mix(in srgb,currentColor 22%,transparent)}
+.ht-sub-note{margin:12px 0 0;font-size:12px;line-height:1.6;opacity:.65}
 @media (max-width:620px){.ht-series .ht-nav{grid-template-columns:1fr}.ht-series .ht-next{grid-column:1;text-align:left}}
 </style>
 </head>
@@ -868,6 +878,6 @@ This report documents the design, evaluation and deployment of <b>HydraTrade</b>
   addEventListener("scroll",hide,{passive:true});
 })();
 </script>
-<section class="ht-series" id="series" aria-label="More in this series"><h2>The HydraTrade series</h2><div class="ht-nav"><a class="ht-card ht-next" href="../ii/"><span class="ht-dir">Next report &rarr;</span><span class="ht-t">HydraTrade II: The Universe Was the Result</span></a></div><a class="ht-all" href="../#reports">All reports</a><p class="ht-note">Research publications of Ciya Labs. Not investment advice; backtested and simulated results do not predict future returns. <a href="https://ciyalabs.com/imprint.html" style="color:inherit">Imprint</a> &middot; <a href="https://ciyalabs.com/privacy.html" style="color:inherit">Privacy</a></p></section>
+<section class="ht-series" id="series" aria-label="More in this series"><form class="ht-sub" action="https://buttondown.com/api/emails/embed-subscribe/hydratrade" method="post" target="_blank"><label class="ht-sub-t" for="ht-email">New HydraTrade reports by email</label><div class="ht-sub-row"><input type="email" name="email" id="ht-email" required autocomplete="email" placeholder="you@example.com"><input type="hidden" name="tag" value="hydratrade"><input type="hidden" name="utm_source" value="report-i"><button type="submit">Subscribe</button></div><p class="ht-sub-note">One email when a report is out, and the first word when the HydraTrade letter starts. Confirm by the link we send; unsubscribe from any email. <a href="https://ciyalabs.com/privacy.html#newsletter" style="color:inherit">Privacy</a></p></form><h2>The HydraTrade series</h2><div class="ht-nav"><a class="ht-card ht-next" href="../ii/"><span class="ht-dir">Next report &rarr;</span><span class="ht-t">HydraTrade II: The Universe Was the Result</span></a></div><a class="ht-all" href="../#reports">All reports</a><p class="ht-note">Research publications of Ciya Labs. Not investment advice; backtested and simulated results do not predict future returns. <a href="https://ciyalabs.com/imprint.html" style="color:inherit">Imprint</a> &middot; <a href="https://ciyalabs.com/privacy.html" style="color:inherit">Privacy</a></p></section>
 </body>
 </html>

@@ -14,7 +14,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="fonts/home.css">
-    <link rel="stylesheet" href="assets/styles.css?v=e6884246">
+    <link rel="stylesheet" href="assets/styles.css?v=63b5bd49">
     <script>
         /* apply a saved theme before first paint */
         try {
@@ -215,9 +215,17 @@
                 </ul>
             </div>
             <div class="footer-col footer-subscribe">
-                <p class="footer-col-title">New reports</p>
-                <p>Write to us and we will tell you when the next report is published. Nothing else.</p>
-                <a class="button" href="mailto:info@ciyalabs.com?subject=HydraTrade%20reports">Get new reports by email</a>
+                <p class="footer-col-title">New reports by email</p>
+                <p>One email when a report is out, and the first word when the HydraTrade letter starts.</p>
+                <form class="subscribe" action="https://buttondown.com/api/emails/embed-subscribe/hydratrade" method="post" target="_blank">
+                    <label class="visually-hidden" for="sub-email">Email address</label>
+                    <input type="email" name="email" id="sub-email" required autocomplete="email" placeholder="you@example.com">
+                    <input type="hidden" name="tag" value="hydratrade">
+                    <input type="hidden" name="utm_source" value="home">
+                    <button class="button" type="submit">Subscribe</button>
+                </form>
+                <p class="subscribe-note">Confirm by the link we send; unsubscribe from any email.
+                    <a href="https://ciyalabs.com/privacy.html#newsletter" rel="noopener">Privacy</a></p>
             </div>
         </div>
         <div class="footer-bottom">
@@ -227,6 +235,6 @@
         </div>
     </footer>
 
-    <script src="assets/home.js?v=e6884246"></script>
+    <script src="assets/home.js?v=63b5bd49"></script>
 </body>
 </html>
